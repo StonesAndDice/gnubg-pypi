@@ -1,0 +1,3 @@
+[submodule "src/gnubg"]
+	path = src/gnubg
+	url = git@github.com:StonesAndDice/gnubg.git

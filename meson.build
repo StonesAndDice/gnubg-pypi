@@ -1,0 +1,160 @@
+project(
+    'gnubg',
+    ['c', 'cpp'],
+    version: run_command(['src/_build_utils/_version.py'], check: true).stdout().strip(),
+    meson_version : '>=0.57.0',
+    default_options : ['optimization=3', 'cpp_std=c++14', 'c_std=gnu11', 'warning_level=1']
+)
+
+# --- Compiler Setup ---
+cc = meson.get_compiler('c')
+
+# --- Critical Fixes ---
+# -D_GNU_SOURCE: Exposes POSIX symbols
+# -U_FORTIFY_SOURCE: Fixes 'sprintf'/'__builtin_va_arg_pack' errors
+# -ffast-math: Performance optimization
+# -fgnu89-inline: FIXES the "multiple definition of atoi/vprintf" errors while allowing C11 syntax
+add_project_arguments(
+    '-D_GNU_SOURCE',
+    '-U_FORTIFY_SOURCE',
+    '-ffast-math',
+    '-fgnu89-inline',
+    language: 'c'
+)
+python3 = import('python').find_installation('python3')
+python_dep = python3.dependency()
+
+# --- Dependencies ---
+glib_dep = dependency('glib-2.0', version: '>= 2.22.0')
+gobject_dep = dependency('gobject-2.0')
+gthread_dep = dependency('gthread-2.0')
+m_dep = cc.find_library('m', required: true)
+sqlite_dep = dependency('sqlite3', required: false)
+png_dep = dependency('libpng', version: '>= 1.6', required: false)
+readline_dep = cc.find_library('readline', required: true)
+gmp_dep = cc.find_library('gmp', required: true)
+
+# --- Configuration Updates ---
+conf_data = configuration_data()
+conf_data.set('USE_PYTHON', 1)
+conf_data.set('USE_MULTITHREAD', 1)
+conf_data.set('MAX_NUMTHREADS', 48)
+conf_data.set_quoted('VERSION', meson.project_version())
+conf_data.set('HAVE_LIBGMP', 1)
+conf_data.set('HAVE_LIB_READLINE', 1)
+
+# Package & Paths
+conf_data.set_quoted('PACKAGE', 'gnubg')
+conf_data.set_quoted('LOCALEDIR', join_paths(get_option('prefix'), get_option('localedir')))
+conf_data.set_quoted('AC_DATADIR', join_paths(get_option('prefix'), get_option('datadir')))
+conf_data.set_quoted('AC_PKGDATADIR', join_paths(get_option('prefix'), get_option('datadir'), 'gnubg'))
+conf_data.set_quoted('AC_DOCDIR', join_paths(get_option('prefix'), get_option('datadir'), 'doc', 'gnubg'))
+
+# Header Checks
+check_headers = [
+    'fcntl.h', 'unistd.h', 'sys/types.h', 'sys/stat.h', 'sys/time.h',
+    'stdlib.h', 'string.h', 'memory.h', 'strings.h', 'inttypes.h', 'stdint.h',
+    'sys/resource.h', 'sys/socket.h'
+]
+
+foreach h : check_headers
+    if cc.has_header(h)
+        conf_data.set('HAVE_' + h.underscorify().to_upper(), 1)
+    endif
+endforeach
+
+# --- Web Browser Configuration ---
+if host_machine.system() == 'windows'
+    conf_data.set_quoted('OPEN_URL_PROG', '')
+else
+    browser = find_program('xdg-open', 'sensible-browser', 'firefox', required: false)
+    if browser.found()
+        conf_data.set_quoted('OPEN_URL_PROG', browser.full_path())
+    else
+        conf_data.set_quoted('OPEN_URL_PROG', 'xdg-open')
+    endif
+endif
+
+config_h = configure_file(output: 'config.h', configuration: conf_data)
+
+# --- Custom Target for Credits Generation ---
+# This runs credits.sh, which generates credits.c, credits.h, and AUTHORS
+credits_gen = custom_target(
+    'credits_gen',
+    output: ['credits.c', 'credits.h', 'AUTHORS'],
+    command: ['sh', files('src/gnubg/credits.sh')],
+    capture: false, # The script writes files directly, don't capture stdout
+    install: false
+)
+
+# --- Include Directories ---
+gnubg_inc = include_directories(
+    'src/gnubg',
+    'src/gnubg/lib',
+    'src/gnubgmodule',
+)
+
+# --- Source Definitions ---
+c_sources = files(
+    'src/gnubg/analysis.c',
+    'src/gnubg/bearoff.c',
+    'src/gnubg/bearoffgammon.c',
+    'src/gnubg/boardpos.c',
+    'src/gnubg/dbprovider.c',
+    'src/gnubg/dice.c',
+    'src/gnubg/eval.c',
+    'src/gnubg/evallock.c',
+    'src/gnubg/export.c',
+    'src/gnubg/external.c',
+    'src/gnubg/file.c',
+    'src/gnubg/format.c',
+    'src/gnubg/formatgs.c',
+    'src/gnubg/glib-ext.c',
+    'src/gnubg/html.c',
+    'src/gnubg/htmlimages.c',
+    'src/gnubg/import.c',
+    'src/gnubg/latex.c',
+    'src/gnubg/matchequity.c',
+    'src/gnubg/matchid.c',
+    'src/gnubg/mec.c',
+    'src/gnubg/multithread.c',
+    'src/gnubg/openurl.c',
+    'src/gnubg/osr.c',
+    'src/gnubg/output.c',
+    'src/gnubg/play.c',
+    'src/gnubg/positionid.c',
+    'src/gnubg/progress.c',
+    'src/gnubg/randomorg.c',
+    'src/gnubg/relational.c',
+    'src/gnubg/rollout.c',
+    'src/gnubg/set.c',
+    'src/gnubg/sgf.c',
+    'src/gnubg/show.c',
+    'src/gnubg/simpleboard.c',
+    'src/gnubg/sound.c',
+    'src/gnubg/speed.c',
+    'src/gnubg/text.c',
+    'src/gnubg/timer.c',
+    'src/gnubg/util.c',
+)
+
+# --- Build Engine ---
+libgnubg = static_library(
+    'gnubg_engine',
+    [c_sources, credits_gen], # Include the generated credits files here
+    include_directories: gnubg_inc,
+    dependencies: [glib_dep, gobject_dep, python_dep, m_dep, sqlite_dep, readline_dep, gmp_dep],
+    install: false,
+)
+
+gnubg_engine_dep = declare_dependency(link_with : libgnubg).as_link_whole()
+
+# --- Build Extension ---
+py_ext = python3.extension_module(
+    '_gnubg',
+    'src/gnubgmodule/gnubgmodule.cpp',
+    dependencies : [python_dep, gnubg_engine_dep, glib_dep],
+    include_directories : gnubg_inc,
+    install      : true,
+    subdir       : 'gnubg',
+)
