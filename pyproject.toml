@@ -30,3 +30,6 @@ Credits = "https://git.savannah.gnu.org/cgit/gnubg.git/tree/credits.sh"
 before-build = "pip install delvewheel"
 # Run delvewheel directly after building each wheel
 repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel}"
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"

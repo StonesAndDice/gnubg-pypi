@@ -5,8 +5,8 @@ VERSION_PATTERN = r"^(\d+!)?(\d+)(\.\d+)+([\.\-\_])?((a(lpha)?|b(eta)?|c|r(c|ev)
 
 @pytest.fixture
 def version_module():
-    # Import the version module from within gnubg package
-    import gnubg.__version__ as version
+    # Import the renamed module
+    import gnubg._version as version
     return version
 
 def test_version_attributes(version_module):
@@ -31,7 +31,7 @@ def test_git_revision(version_module):
 
 def test_version_values_match():
     import gnubg
-    import gnubg.__version__ as v
+    import gnubg._version as v
 
     assert v.version
     assert v.__version__

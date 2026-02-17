@@ -1,13 +1,56 @@
+# meson.build
 project(
-    'gnubg',
-    ['c', 'cpp'],
-    version: run_command(['src/_build_utils/_version.py'], check: true).stdout().strip(),
-    meson_version : '>=0.57.0',
-    default_options : ['optimization=3', 'cpp_std=c++14', 'c_std=gnu11', 'warning_level=1']
+    'gnubg',                      # Your project name
+    ['cpp', 'c'],                 # Languages used
+    version: run_command(
+        ['src/_build_utils/_version.py'],
+        check: true
+    ).stdout().strip(),
+    meson_version : '>=1.7.0',     # Require a recent Meson
 )
 
-# --- Compiler Setup ---
 cc = meson.get_compiler('c')
+
+python3 = import('python').find_installation('python3', pure: false)
+python_dep = python3.dependency()
+pkgdir = python3.get_install_dir()
+pkg_name = 'gnubg'
+
+configure_file(
+    input: 'src/gnubgmodule/__init__.py',
+    output: '__init__.py',
+    copy: true,
+    install: false, # We already handle installation via install_data
+    install_dir: 'gnubg' # This places it in build/gnubg/__init__.py
+)
+
+# Custom target to generate __version__.py at build time and install it
+generate_version = custom_target(
+    'generate_version',
+    output: '_version.py', # Changed from __version__.py
+    command: [
+        python3,
+        files('src/_build_utils/_version.py'),
+        '--write', '@OUTPUT@'
+    ],
+    build_by_default: true,
+    install: true,
+    install_dir: join_paths(pkgdir, pkg_name)
+)
+
+# Install __init__.py
+install_data(
+    'src/gnubgmodule/__init__.py',
+    install_dir: join_paths(pkgdir, pkg_name)
+)
+
+install_data(
+    'src/gnubgmodule/data/gnubg.weights',
+    'src/gnubgmodule/data/gnubg_ts0.bd',
+    'src/gnubgmodule/data/gnubg_os0.bd',
+    'src/gnubgmodule/data/gnubg_os.db',
+    install_dir: join_paths(pkgdir, pkg_name, 'data')
+)
 
 # --- Critical Fixes ---
 # -D_GNU_SOURCE: Exposes POSIX symbols
@@ -21,8 +64,6 @@ add_project_arguments(
     '-fgnu89-inline',
     language: 'c'
 )
-python3 = import('python').find_installation('python3')
-python_dep = python3.dependency()
 
 # --- Dependencies ---
 glib_dep = dependency('glib-2.0', version: '>= 2.22.0')
@@ -140,7 +181,7 @@ c_sources = files(
 
 # --- Build Engine ---
 libgnubg = static_library(
-    'gnubg_engine',
+    'gnubg',
     [c_sources, credits_gen], # Include the generated credits files here
     include_directories: gnubg_inc,
     dependencies: [glib_dep, gobject_dep, python_dep, m_dep, sqlite_dep, readline_dep, gmp_dep],
@@ -148,6 +189,13 @@ libgnubg = static_library(
 )
 
 gnubg_engine_dep = declare_dependency(link_with : libgnubg).as_link_whole()
+
+# --- Install Data Files ---
+# Install the 'data' folder into site-packages/gnubg/data
+install_subdir(
+    'src/gnubgmodule/data',
+    install_dir: join_paths(python3.get_install_dir(), 'gnubg')
+)
 
 # --- Build Extension ---
 py_ext = python3.extension_module(
@@ -157,4 +205,14 @@ py_ext = python3.extension_module(
     include_directories : gnubg_inc,
     install      : true,
     subdir       : 'gnubg',
+)
+
+test_env = environment()
+test_env.set('PYTHONPATH', [meson.project_build_root()])
+
+test('python_tests',
+    python3,
+    args: ['-m', 'pytest', join_paths(meson.project_source_root(), 'tests')],
+    env: test_env,
+    workdir: meson.project_source_root()
 )

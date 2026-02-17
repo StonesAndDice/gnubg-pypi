@@ -17,15 +17,16 @@ clean:
 install:
 	pip install --upgrade pip setuptools wheel cibuildwheel twine meson ninja pytest
 
-build:
+build: clean
 	meson setup build
 	meson compile -C build
 
 wheel:
 	cibuildwheel --platform linux --output-dir dist
 
-wheel_local:
-	python -m build
+wheel_local: build
+	python3 -m pip install build
+	python3 -m pip wheel . --no-deps -w dist/
 
 twine: twine_linux twine_macos twine_windows
 twine_macos:
@@ -35,8 +36,9 @@ twine_linux:
 twine_windows:
 	twine upload --verbose --repository $(PYPI_REPO) dist/windows/*.whl
 
-test:
-	python3 -m pytest tests/
+test: wheel_local
+	pip install dist/gnubg-*.whl --force-reinstall
+	cd tests && python3 -m pytest .
 
 patch:
 	cp -rf patches/gnubg-nn/* gnubg-nn/
