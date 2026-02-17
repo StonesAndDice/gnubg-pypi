@@ -2,43 +2,77 @@
 #include <Python.h>
 #include <string>
 
-// Include your GNUBG headers here
-// Wrap them in extern "C" because they are C headers
+// Include GNUBG headers
+// We wrap them in extern "C" because the original project headers are C
 extern "C" {
-    #include "gnubgmodule.h" // Replace with actual GNUBG headers
-    // Example: typedef struct { void* p; } listOLD; 
+    #include "gnubgmodule.h"
+    #include "backgammon.h"   // Defines 'ms' (matchstate), 'msBoard', 'GAME_NONE'
+    #include "lib/gnubg-types.h" // Defines 'TanBoard'
 }
 
-/* * FIX 1: Casting Keyword Lists 
- * C++ is strict about 'const char*'. Python expects 'char*'.
- */
-static PyObject* py_example_keywords(PyObject* self, PyObject* args, PyObject* keywds) {
-    int val1 = 0, val2 = 0;
-    static const char* kwlist[] = {"val1", "val2", NULL};
+/* -------------------------------------------------------------------------
+ * Helper Functions
+ * ------------------------------------------------------------------------- */
 
-    // Note the const_cast<char**> to satisfy the Python API
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "|ii", 
-                                     const_cast<char**>(kwlist), 
-                                     &val1, &val2)) {
-        return NULL;
+/* * Ported from gnubgmodule.c: BoardToPy
+ * Converts the internal TanBoard representation to a Python tuple of tuples.
+ */
+static PyObject *
+BoardToPy(const TanBoard anBoard)
+{
+    PyObject *b = PyTuple_New(2);
+    PyObject *b0 = PyTuple_New(25);
+    PyObject *b1 = PyTuple_New(25);
+    unsigned int k;
+
+    for (k = 0; k < 25; ++k) {
+        // In Python 3, PyInt_FromLong is replaced by PyLong_FromLong
+        PyTuple_SET_ITEM(b0, k, PyLong_FromLong(anBoard[0][k]));
+        PyTuple_SET_ITEM(b1, k, PyLong_FromLong(anBoard[1][k]));
     }
-    return Py_BuildValue("ii", val1, val2);
+
+    PyTuple_SET_ITEM(b, 0, b0);
+    PyTuple_SET_ITEM(b, 1, b1);
+
+    return b;
 }
 
-/* * FIX 2: Explicit Casting for void*
- * C++ does not allow implicit conversion from void* (pl->p) to a specific pointer type.
+/* -------------------------------------------------------------------------
+ * Python Exposed Functions
+ * ------------------------------------------------------------------------- */
+
+/*
+ * Ported from gnubgmodule.c: PythonBoard
+ * Exposed as: gnubg.board()
  */
-static PyObject* py_process_list(PyObject* self, PyObject* args) {
-    // This is a placeholder for your 'PythonGame' logic
-    // PyObject *pg = PythonGame(static_cast<const listOLD*>(pl->p), ...);
-    
-    Py_RETURN_NONE;
+static PyObject *
+PythonBoard(PyObject * self, PyObject * args)
+{
+    // :board indicates no arguments are expected
+    if (!PyArg_ParseTuple(args, ":board"))
+        return NULL;
+
+    // Check if a game is active (ms is the global matchstate defined in backgammon.h)
+    if (ms.gs == GAME_NONE) {
+        Py_RETURN_NONE;
+    }
+
+    // msBoard() is a macro/function in backgammon.h returning the current board
+    return BoardToPy(msBoard());
 }
+
+/* -------------------------------------------------------------------------
+ * Module Registration
+ * ------------------------------------------------------------------------- */
 
 // Method table
 static PyMethodDef GnubgMethods[] = {
-    {"test_keywords", (PyCFunction)py_example_keywords, METH_VARARGS | METH_KEYWORDS, "Test keywords"},
-    {"process_list", py_process_list, METH_VARARGS, "Test void* casting"},
+    {"board", PythonBoard, METH_VARARGS,
+     "Get the current board\n"
+     "    arguments: none\n"
+     "    returns: tuple of two lists of 25 ints:\n"
+     "        pieces on points 1..24 and the bar"},
+
     {NULL, NULL, 0, NULL}
 };
 

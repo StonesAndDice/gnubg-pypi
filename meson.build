@@ -137,6 +137,7 @@ gnubg_inc = include_directories(
 
 # --- Source Definitions ---
 c_sources = files(
+    'src/gnubgmodule/gnubg_lib.c',
     'src/gnubg/analysis.c',
     'src/gnubg/bearoff.c',
     'src/gnubg/bearoffgammon.c',
@@ -177,6 +178,7 @@ c_sources = files(
     'src/gnubg/text.c',
     'src/gnubg/timer.c',
     'src/gnubg/util.c',
+    'src/gnubg/lib/neuralnet.c',
 )
 
 # --- Build Engine ---
