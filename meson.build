@@ -58,9 +58,11 @@ install_data(
 # -ffast-math: Performance optimization
 # -fgnu89-inline: FIXES the "multiple definition of atoi/vprintf" errors while allowing C11 syntax
 # -mno-mmx: On MinGW x86_64, avoids broken MMX intrinsics in windows.h -> mmintrin.h chain
+# -include skip_mmintrin.h: define _MMINTRIN_H_INCLUDED so real mmintrin.h is skipped when pulled in
 c_args = ['-D_GNU_SOURCE', '-U_FORTIFY_SOURCE', '-ffast-math', '-fgnu89-inline']
 if host_machine.system() == 'windows'
-  c_args += ['-mno-mmx']
+  win32_stub = join_paths(meson.current_source_dir(), 'win32_stub', 'skip_mmintrin.h')
+  c_args = ['-include', win32_stub, '-mno-mmx'] + c_args
 endif
 add_project_arguments(c_args, language: 'c')
 
@@ -213,10 +215,11 @@ install_subdir(
 )
 
 # --- Build Extension ---
-# On MinGW x86_64, -mno-mmx avoids broken MMX intrinsics in windows.h include chain
+# On MinGW x86_64, -include skip_mmintrin.h and -mno-mmx avoid broken MMX intrinsics
 py_ext_cpp_args = ['-fvisibility=default']
 if host_machine.system() == 'windows'
-  py_ext_cpp_args += ['-mno-mmx']
+  win32_stub = join_paths(meson.current_source_dir(), 'win32_stub', 'skip_mmintrin.h')
+  py_ext_cpp_args = ['-include', win32_stub, '-mno-mmx'] + py_ext_cpp_args
 endif
 py_ext = python3.extension_module(
     '_gnubg',
