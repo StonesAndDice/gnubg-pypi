@@ -138,12 +138,16 @@ gnubg_inc = include_directories(
 # --- Source Definitions ---
 c_sources = files(
     'src/gnubgmodule/gnubg_lib.c',
+    'src/gnubgmodule/python_stubs.c',
+    'src/gnubg/non-src/copying.c',
     'src/gnubg/analysis.c',
     'src/gnubg/bearoff.c',
     'src/gnubg/bearoffgammon.c',
     'src/gnubg/boardpos.c',
+    'src/gnubg/lib/cache.c',
     'src/gnubg/dbprovider.c',
     'src/gnubg/dice.c',
+    'src/gnubg/drawboard.c',  # Needed for ParseMove and FormatMove functions
     'src/gnubg/eval.c',
     'src/gnubg/evallock.c',
     'src/gnubg/export.c',
@@ -156,6 +160,7 @@ c_sources = files(
     'src/gnubg/htmlimages.c',
     'src/gnubg/import.c',
     'src/gnubg/latex.c',
+    'src/gnubg/lib/list.c',
     'src/gnubg/matchequity.c',
     'src/gnubg/matchid.c',
     'src/gnubg/mec.c',
@@ -168,6 +173,8 @@ c_sources = files(
     'src/gnubg/progress.c',
     'src/gnubg/randomorg.c',
     'src/gnubg/relational.c',
+    'src/gnubg/render.c',
+    'src/gnubg/renderprefs.c',
     'src/gnubg/rollout.c',
     'src/gnubg/set.c',
     'src/gnubg/sgf.c',
@@ -179,6 +186,10 @@ c_sources = files(
     'src/gnubg/timer.c',
     'src/gnubg/util.c',
     'src/gnubg/lib/neuralnet.c',
+    'src/gnubg/lib/SFMT.c',
+    'src/gnubg/lib/isaac.c',
+    'src/gnubg/lib/md5.c',
+    'src/gnubg/lib/inputs.c',
 )
 
 # --- Build Engine ---
@@ -203,10 +214,13 @@ install_subdir(
 py_ext = python3.extension_module(
     '_gnubg',
     'src/gnubgmodule/gnubgmodule.cpp',
-    dependencies : [python_dep, gnubg_engine_dep, glib_dep],
+    dependencies : [python_dep, glib_dep],
+    link_with : libgnubg,
+    link_whole : libgnubg,
     include_directories : gnubg_inc,
     install      : true,
     subdir       : 'gnubg',
+    cpp_args     : ['-fvisibility=default'],  # Ensure symbols are exported
 )
 
 test_env = environment()

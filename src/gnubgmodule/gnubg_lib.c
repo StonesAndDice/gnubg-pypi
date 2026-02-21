@@ -39,6 +39,7 @@
 #include "config.h"
 #ifdef USE_PYTHON
 #include <Python.h>
+#include "python_stubs.h"
 #endif
 #include "multithread.h"
 

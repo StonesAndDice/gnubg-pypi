@@ -25,8 +25,8 @@ wheel:
 	cibuildwheel --platform linux --output-dir dist
 
 wheel_local: build
-	python3 -m pip install build
-	python3 -m pip wheel . --no-deps -w dist/
+	python3 -m pip install --upgrade --no-cache-dir pip build packaging>=24.0 meson-python>=0.15.0
+	python3 -m pip wheel . --no-deps --no-cache-dir -w dist/
 
 twine: twine_linux twine_macos twine_windows
 twine_macos:
@@ -36,9 +36,20 @@ twine_linux:
 twine_windows:
 	twine upload --verbose --repository $(PYPI_REPO) dist/windows/*.whl
 
-test: wheel_local
-	pip install dist/gnubg-*.whl --force-reinstall
+test: build
+	pip uninstall -y gnubg || true
+	pip install -e . --no-build-isolation
 	cd tests && python3 -m pytest .
+
+# Run tests. Install first with: pip install -e .  (On Windows use WSL - see BUILD_README.md)
+.PHONY: tests
+tests:
+	pip install pytest
+	# Uninstall any broken editable install first
+	pip uninstall -y gnubg || true
+	# Reinstall in editable mode properly
+	pip install -e . --no-build-isolation
+	python -m pytest tests/ -v
 
 patch:
 	cp -rf patches/gnubg-nn/* gnubg-nn/
