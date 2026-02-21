@@ -211,6 +211,11 @@ install_subdir(
 )
 
 # --- Build Extension ---
+# On MinGW x86_64, -mno-mmx avoids broken MMX intrinsics in windows.h include chain
+py_ext_cpp_args = ['-fvisibility=default']
+if host_machine.system() == 'windows'
+  py_ext_cpp_args += ['-mno-mmx']
+endif
 py_ext = python3.extension_module(
     '_gnubg',
     'src/gnubgmodule/gnubgmodule.cpp',
@@ -220,7 +225,7 @@ py_ext = python3.extension_module(
     include_directories : gnubg_inc,
     install      : true,
     subdir       : 'gnubg',
-    cpp_args     : ['-fvisibility=default'],  # Ensure symbols are exported
+    cpp_args     : py_ext_cpp_args,
 )
 
 test_env = environment()

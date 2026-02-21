@@ -3,8 +3,16 @@
 #include <cstring>
 #include <string>
 
-// Include GNUBG headers
-// We wrap them in extern "C" because the original project headers are C
+// Include glib and Windows headers before extern "C" so C++/template code in
+// them is not parsed with C linkage (fixes MinGW build: template with C linkage,
+// mmintrin.h __m64 errors).
+#include <glib.h>
+#if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__)
+#include <winsock2.h>
+#include <windows.h>
+#endif
+
+// Include GNUBG headers; wrap in extern "C" so C symbols link correctly.
 extern "C" {
 #include "backgammon.h"  // Defines 'ms' (matchstate), 'msBoard', 'GAME_NONE', GetMatchStateCubeInfo
 #include "dice.h"       // RollDice, rngCurrent, rngctxCurrent
@@ -17,7 +25,6 @@ extern "C" {
 #include "multithread.h"  // MT_SafeGet, MT_SafeSet (for command)
 #include "output.h"       // foutput_to_mem, szMemOutput (for show)
 #include "positionid.h"  // Position ID functions, PositionBearoff, PositionFromBearoff, Combination
-#include <glib.h>  // g_strdup, g_free, g_strjoin
 }
 #include <cerrno>   // errno
 #include <climits>  // INT_MIN (for navigate)
