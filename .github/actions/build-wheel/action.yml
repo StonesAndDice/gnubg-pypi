@@ -50,6 +50,11 @@ runs:
         meson setup build
         meson compile -C build
 
+    - name: Clean build dir before cibuildwheel
+      if: ${{ inputs.os == 'ubuntu-latest' || inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
+      shell: bash
+      run: rm -rf build
+
     - name: Build wheels
       if: ${{ inputs.os == 'ubuntu-latest' || inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
       shell: bash
@@ -73,6 +78,11 @@ runs:
       run: |
         meson setup build
         meson compile -C build
+
+    - name: Clean build dir before cibuildwheel
+      if: ${{ inputs.os == 'windows-latest' }}
+      shell: pwsh
+      run: Remove-Item -Recurse -Force build -ErrorAction SilentlyContinue
 
     - name: Build wheels
       if: ${{ inputs.os == 'windows-latest' }}
