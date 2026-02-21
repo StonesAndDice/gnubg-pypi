@@ -42,6 +42,22 @@ runs:
         echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
         echo "CFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
 
+    - name: Install system dependencies (Windows)
+      if: ${{ inputs.os == 'windows-latest' }}
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-pkg-config
+          mingw-w64-ucrt-x86_64-glib2
+          mingw-w64-ucrt-x86_64-gmp
+          mingw-w64-ucrt-x86_64-readline
+          mingw-w64-ucrt-x86_64-sqlite3
+          mingw-w64-ucrt-x86_64-libpng
+          mingw-w64-ucrt-x86_64-gettext
+
     - name: Install Meson
       if: ${{ inputs.os == 'ubuntu-latest' || inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
       shell: bash
