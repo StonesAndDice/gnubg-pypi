@@ -57,13 +57,12 @@ install_data(
 # -U_FORTIFY_SOURCE: Fixes 'sprintf'/'__builtin_va_arg_pack' errors
 # -ffast-math: Performance optimization
 # -fgnu89-inline: FIXES the "multiple definition of atoi/vprintf" errors while allowing C11 syntax
-add_project_arguments(
-    '-D_GNU_SOURCE',
-    '-U_FORTIFY_SOURCE',
-    '-ffast-math',
-    '-fgnu89-inline',
-    language: 'c'
-)
+# -mno-mmx: On MinGW x86_64, avoids broken MMX intrinsics in windows.h -> mmintrin.h chain
+c_args = ['-D_GNU_SOURCE', '-U_FORTIFY_SOURCE', '-ffast-math', '-fgnu89-inline']
+if host_machine.system() == 'windows'
+  c_args += ['-mno-mmx']
+endif
+add_project_arguments(c_args, language: 'c')
 
 # --- Dependencies ---
 glib_dep = dependency('glib-2.0', version: '>= 2.22.0')
