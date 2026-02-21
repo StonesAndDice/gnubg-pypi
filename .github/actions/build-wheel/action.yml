@@ -44,6 +44,7 @@ runs:
 
     - name: Install system dependencies (Windows)
       if: ${{ inputs.os == 'windows-latest' }}
+      id: msys2
       uses: msys2/setup-msys2@v2
       with:
         msystem: UCRT64
@@ -57,6 +58,15 @@ runs:
           mingw-w64-ucrt-x86_64-sqlite3
           mingw-w64-ucrt-x86_64-libpng
           mingw-w64-ucrt-x86_64-gettext
+
+    - name: Set MSYS2 env for PowerShell (Windows)
+      if: ${{ inputs.os == 'windows-latest' }}
+      shell: pwsh
+      run: |
+        $msys2Root = "${{ steps.msys2.outputs.msys2-location }}"
+        $ucrt64 = Join-Path $msys2Root "ucrt64"
+        "PATH=$ucrt64\bin;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append
+        "PKG_CONFIG_PATH=$ucrt64\lib\pkgconfig" | Out-File -FilePath $env:GITHUB_ENV -Append
 
     - name: Install Meson
       if: ${{ inputs.os == 'ubuntu-latest' || inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
