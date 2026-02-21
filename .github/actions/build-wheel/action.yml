@@ -31,6 +31,13 @@ runs:
           libssl-dev \
           zlib1g-dev
 
+    - name: Install system dependencies (macOS)
+      if: ${{ inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
+      shell: bash
+      run: |
+        brew update
+        brew install pkg-config glib readline gmp sqlite libpng
+
     - name: Install Meson
       if: ${{ inputs.os == 'ubuntu-latest' || inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
       shell: bash
