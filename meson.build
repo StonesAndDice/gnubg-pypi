@@ -133,6 +133,9 @@ gnubg_inc = include_directories(
     'src/gnubg/lib',
     'src/gnubgmodule',
 )
+# On Windows, inject stub mmintrin.h first so MinGW's broken one is not used
+win32_stub_inc = include_directories('win32_stub')
+libgnubg_inc = host_machine.system() == 'windows' ? [win32_stub_inc, gnubg_inc] : gnubg_inc
 
 # --- Source Definitions ---
 c_sources = files(
@@ -195,7 +198,7 @@ c_sources = files(
 libgnubg = static_library(
     'gnubg',
     [c_sources, credits_gen], # Include the generated credits files here
-    include_directories: gnubg_inc,
+    include_directories: libgnubg_inc,
     dependencies: [glib_dep, gobject_dep, python_dep, m_dep, sqlite_dep, readline_dep, gmp_dep],
     install: false,
 )
@@ -221,7 +224,7 @@ py_ext = python3.extension_module(
     dependencies : [python_dep, glib_dep],
     link_with : libgnubg,
     link_whole : libgnubg,
-    include_directories : gnubg_inc,
+    include_directories : libgnubg_inc,
     install      : true,
     subdir       : 'gnubg',
     cpp_args     : py_ext_cpp_args,
