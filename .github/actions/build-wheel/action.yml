@@ -63,7 +63,7 @@ runs:
         CIBW_BUILD: "${{ inputs.python }}-*"
         CIBW_ARCHS_MACOS: "native"
         CIBW_PLATFORM: ${{ inputs.os == 'ubuntu-latest' && 'linux' || (inputs.os == 'macos-13' && 'macos') || (inputs.os == 'macos-14' && 'macos') || (inputs.os == 'windows-latest' && 'windows') }}
-        CIBW_BEFORE_BUILD: ${{ inputs.os == 'ubuntu-latest' && '( dnf install -y readline-devel ncurses-devel glib2-devel gmp-devel sqlite-devel libpng-devel pkg-config 2>/dev/null ) || ( apk add --no-cache readline-dev ncurses-dev glib2-dev gmp-dev sqlite-dev libpng-dev pkgconfig )' || '' }}
+        CIBW_BEFORE_BUILD: ${{ inputs.os == 'ubuntu-latest' && '( dnf install -y readline-devel ncurses-devel glib2-devel gmp-devel sqlite-devel libpng-devel pkg-config 2>/dev/null ) || ( apk add --no-cache readline-dev ncurses-dev glib-dev gmp-dev sqlite-dev libpng-dev pkgconfig )' || '' }}
         CIBW_TEST_REQUIRES: "pytest"
         CIBW_TEST_COMMAND: "pytest {project}/tests"
       run: cibuildwheel --output-dir wheelhouse
