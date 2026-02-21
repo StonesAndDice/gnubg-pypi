@@ -2,8 +2,8 @@
  * Header for Python stub functions
  */
 
-#ifndef PYTHON_STUBS_H
-#define PYTHON_STUBS_H
+#ifndef SRC_GNUBGMODULE_PYTHON_STUBS_H_
+#define SRC_GNUBGMODULE_PYTHON_STUBS_H_
 
 #if defined(USE_PYTHON)
 
@@ -15,4 +15,4 @@ void CloseThread(void *unused);
 
 #endif /* USE_PYTHON */
 
-#endif /* PYTHON_STUBS_H */
+#endif  // SRC_GNUBGMODULE_PYTHON_STUBS_H_
