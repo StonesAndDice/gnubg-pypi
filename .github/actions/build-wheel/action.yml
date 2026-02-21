@@ -37,6 +37,10 @@ runs:
       run: |
         brew update
         brew install pkg-config glib readline gmp sqlite libpng
+        echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
+        echo "CFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
 
     - name: Install Meson
       if: ${{ inputs.os == 'ubuntu-latest' || inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
