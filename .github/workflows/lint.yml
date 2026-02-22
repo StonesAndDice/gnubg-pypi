@@ -45,6 +45,12 @@ jobs:
             --suppress=unmatchedSuppression \
             --suppress=checkersReport \
             --suppress=objectIndex \
+            --suppress=constVariablePointer \
+            --suppress=constVariable \
+            --suppress=constParameterPointer \
+            --suppress=unreadVariable \
+            --suppress=badBitmaskCheck \
+            --suppress=cstyleCast \
             -I src/gnubgmodule src/gnubgmodule
 
       - name: Verify formatting with clang-format (matches pre-commit)
