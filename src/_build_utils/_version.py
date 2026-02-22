@@ -68,10 +68,10 @@ if __name__ == "__main__":
 
     version, git_hash = git_version(init_version())
 
-    # For NumPy 2.0, this should only have one field: `version`
+    # Version info template
     template = textwrap.dedent(f'''
         """
-        Module to expose more detailed version info for the installed `numpy`
+        Module to expose more detailed version info for the installed `gnubg`
         """
         version = "{version}"
         __version__ = version

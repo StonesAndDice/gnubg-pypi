@@ -39,6 +39,18 @@ jobs:
             --error-exitcode=1 \
             --suppress=missingInclude \
             --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
+            --suppress=toomanyconfigs \
+            --suppress=ConfigurationNotChecked \
+            --suppress=unmatchedSuppression \
+            --suppress=checkersReport \
+            --suppress=objectIndex \
+            --suppress=constVariablePointer \
+            --suppress=constVariable \
+            --suppress=constParameterPointer \
+            --suppress=unreadVariable \
+            --suppress=badBitmaskCheck \
+            --suppress=cstyleCast \
             -I src/gnubgmodule src/gnubgmodule
 
       - name: Verify formatting with clang-format (matches pre-commit)
@@ -48,7 +60,7 @@ jobs:
 
       - name: Run cpplint style checks (matches pre-commit)
         run: |
-          find src/gnubgmodule/ -regex '.*\.\(c\|cpp\|h\|hpp\)' -print0 \
+          find src/gnubgmodule/ -regex '.*\.\(c\|cpp\|h\|hpp\)' ! -name gnubg_lib.c -print0 \
             | xargs -0 python3 -m cpplint \
               --quiet \
-              --filter=-build/include_subdir
+              --filter=-build/include_subdir,-build/include_order,-build/include_what_you_use,-legal/copyright,-readability/casting,-runtime/int

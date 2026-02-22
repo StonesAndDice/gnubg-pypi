@@ -57,13 +57,13 @@ install_data(
 # -U_FORTIFY_SOURCE: Fixes 'sprintf'/'__builtin_va_arg_pack' errors
 # -ffast-math: Performance optimization
 # -fgnu89-inline: FIXES the "multiple definition of atoi/vprintf" errors while allowing C11 syntax
-add_project_arguments(
-    '-D_GNU_SOURCE',
-    '-U_FORTIFY_SOURCE',
-    '-ffast-math',
-    '-fgnu89-inline',
-    language: 'c'
-)
+# On MinGW: -I win32_stub first so winnt.h gets our stub x86intrin.h/emmintrin.h (avoids broken MMX/AVX chain)
+c_args = ['-D_GNU_SOURCE', '-U_FORTIFY_SOURCE', '-ffast-math', '-fgnu89-inline']
+if host_machine.system() == 'windows'
+  win32_stub = join_paths(meson.project_source_root(), 'win32_stub')
+  c_args += ['-mno-mmx', '-mno-avx', '-mno-avx2', '-I' + win32_stub]
+endif
+add_project_arguments(c_args, language: 'c')
 
 # --- Dependencies ---
 glib_dep = dependency('glib-2.0', version: '>= 2.22.0')
@@ -74,6 +74,7 @@ sqlite_dep = dependency('sqlite3', required: false)
 png_dep = dependency('libpng', version: '>= 1.6', required: false)
 readline_dep = cc.find_library('readline', required: true)
 gmp_dep = cc.find_library('gmp', required: true)
+winmm_dep = cc.find_library('winmm', required: host_machine.system() == 'windows')
 
 # --- Configuration Updates ---
 conf_data = configuration_data()
@@ -134,15 +135,22 @@ gnubg_inc = include_directories(
     'src/gnubg/lib',
     'src/gnubgmodule',
 )
+# On Windows, inject stub mmintrin.h first so MinGW's broken one is not used
+libgnubg_inc = gnubg_inc
 
 # --- Source Definitions ---
 c_sources = files(
+    'src/gnubgmodule/gnubg_lib.c',
+    'src/gnubgmodule/python_stubs.c',
+    'src/gnubg/non-src/copying.c',
     'src/gnubg/analysis.c',
     'src/gnubg/bearoff.c',
     'src/gnubg/bearoffgammon.c',
     'src/gnubg/boardpos.c',
+    'src/gnubg/lib/cache.c',
     'src/gnubg/dbprovider.c',
     'src/gnubg/dice.c',
+    'src/gnubg/drawboard.c',  # Needed for ParseMove and FormatMove functions
     'src/gnubg/eval.c',
     'src/gnubg/evallock.c',
     'src/gnubg/export.c',
@@ -155,6 +163,7 @@ c_sources = files(
     'src/gnubg/htmlimages.c',
     'src/gnubg/import.c',
     'src/gnubg/latex.c',
+    'src/gnubg/lib/list.c',
     'src/gnubg/matchequity.c',
     'src/gnubg/matchid.c',
     'src/gnubg/mec.c',
@@ -167,6 +176,8 @@ c_sources = files(
     'src/gnubg/progress.c',
     'src/gnubg/randomorg.c',
     'src/gnubg/relational.c',
+    'src/gnubg/render.c',
+    'src/gnubg/renderprefs.c',
     'src/gnubg/rollout.c',
     'src/gnubg/set.c',
     'src/gnubg/sgf.c',
@@ -177,13 +188,18 @@ c_sources = files(
     'src/gnubg/text.c',
     'src/gnubg/timer.c',
     'src/gnubg/util.c',
+    'src/gnubg/lib/neuralnet.c',
+    'src/gnubg/lib/SFMT.c',
+    'src/gnubg/lib/isaac.c',
+    'src/gnubg/lib/md5.c',
+    'src/gnubg/lib/inputs.c',
 )
 
 # --- Build Engine ---
 libgnubg = static_library(
     'gnubg',
     [c_sources, credits_gen], # Include the generated credits files here
-    include_directories: gnubg_inc,
+    include_directories: libgnubg_inc,
     dependencies: [glib_dep, gobject_dep, python_dep, m_dep, sqlite_dep, readline_dep, gmp_dep],
     install: false,
 )
@@ -198,13 +214,25 @@ install_subdir(
 )
 
 # --- Build Extension ---
+# On MinGW, -I win32_stub first so winnt.h gets our stub x86intrin.h/emmintrin.h
+py_ext_cpp_args = ['-fvisibility=default']
+if host_machine.system() == 'windows'
+  py_ext_cpp_args += ['-mno-mmx', '-mno-avx', '-mno-avx2', '-I' + win32_stub]
+endif
+py_ext_deps = [python_dep, glib_dep]
+if host_machine.system() == 'windows'
+  py_ext_deps += [winmm_dep]
+endif
 py_ext = python3.extension_module(
     '_gnubg',
     'src/gnubgmodule/gnubgmodule.cpp',
-    dependencies : [python_dep, gnubg_engine_dep, glib_dep],
-    include_directories : gnubg_inc,
+    dependencies : py_ext_deps,
+    link_with : libgnubg,
+    link_whole : libgnubg,
+    include_directories : libgnubg_inc,
     install      : true,
     subdir       : 'gnubg',
+    cpp_args     : py_ext_cpp_args,
 )
 
 test_env = environment()

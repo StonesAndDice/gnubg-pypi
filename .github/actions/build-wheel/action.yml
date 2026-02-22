@@ -22,9 +22,51 @@ runs:
           autoconf automake \
           pkg-config \
           python3.12-dev \
+          libglib2.0-dev \
+          libreadline-dev \
+          libgmp-dev \
+          libsqlite3-dev \
+          libpng-dev \
           libgtk-3-dev \
           libssl-dev \
           zlib1g-dev
+
+    - name: Install system dependencies (macOS)
+      if: ${{ inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
+      shell: bash
+      run: |
+        brew update
+        brew install pkg-config glib readline gmp sqlite libpng
+        echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
+        echo "CFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
+
+    - name: Install system dependencies (Windows)
+      if: ${{ inputs.os == 'windows-latest' }}
+      id: msys2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-gcc
+          mingw-w64-ucrt-x86_64-pkg-config
+          mingw-w64-ucrt-x86_64-glib2
+          mingw-w64-ucrt-x86_64-gmp
+          mingw-w64-ucrt-x86_64-readline
+          mingw-w64-ucrt-x86_64-sqlite3
+          mingw-w64-ucrt-x86_64-libpng
+          mingw-w64-ucrt-x86_64-gettext
+
+    - name: Set MSYS2 env for PowerShell (Windows)
+      if: ${{ inputs.os == 'windows-latest' }}
+      shell: pwsh
+      run: |
+        $msys2Root = "${{ steps.msys2.outputs.msys2-location }}"
+        $ucrt64 = Join-Path $msys2Root "ucrt64"
+        "PATH=$ucrt64\bin;$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append
+        "PKG_CONFIG_PATH=$ucrt64\lib\pkgconfig" | Out-File -FilePath $env:GITHUB_ENV -Append
 
     - name: Install Meson
       if: ${{ inputs.os == 'ubuntu-latest' || inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
@@ -38,6 +80,11 @@ runs:
         meson setup build
         meson compile -C build
 
+    - name: Clean build dir before cibuildwheel
+      if: ${{ inputs.os == 'ubuntu-latest' || inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
+      shell: bash
+      run: rm -rf build
+
     - name: Build wheels
       if: ${{ inputs.os == 'ubuntu-latest' || inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
       shell: bash
@@ -46,8 +93,11 @@ runs:
         CIBW_BUILD: "${{ inputs.python }}-*"
         CIBW_ARCHS_MACOS: "native"
         CIBW_PLATFORM: ${{ inputs.os == 'ubuntu-latest' && 'linux' || (inputs.os == 'macos-13' && 'macos') || (inputs.os == 'macos-14' && 'macos') || (inputs.os == 'windows-latest' && 'windows') }}
+        CIBW_BEFORE_BUILD: ${{ inputs.os == 'ubuntu-latest' && '( dnf install -y readline-devel ncurses-devel glib2-devel gmp-devel sqlite-devel libpng-devel pkg-config 2>/dev/null ) || ( apk add --no-cache readline-dev ncurses-dev glib-dev gmp-dev sqlite-dev libpng-dev pkgconfig )' || '' }}
         CIBW_TEST_REQUIRES: "pytest"
         CIBW_TEST_COMMAND: "pytest {project}/tests"
+        # Match Homebrew dylibs (min 14.0) so delocate accepts the wheel
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
       run: cibuildwheel --output-dir wheelhouse
 
     - name: Install Meson
@@ -61,6 +111,11 @@ runs:
       run: |
         meson setup build
         meson compile -C build
+
+    - name: Clean build dir before cibuildwheel
+      if: ${{ inputs.os == 'windows-latest' }}
+      shell: pwsh
+      run: Remove-Item -Recurse -Force build -ErrorAction SilentlyContinue
 
     - name: Build wheels
       if: ${{ inputs.os == 'windows-latest' }}
