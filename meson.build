@@ -133,8 +133,7 @@ gnubg_inc = include_directories(
     'src/gnubgmodule',
 )
 # On Windows, inject stub mmintrin.h first so MinGW's broken one is not used
-win32_stub_inc = include_directories('win32_stub')
-libgnubg_inc = host_machine.system() == 'windows' ? [win32_stub_inc, gnubg_inc] : gnubg_inc
+libgnubg_inc = gnubg_inc
 
 # --- Source Definitions ---
 c_sources = files(
