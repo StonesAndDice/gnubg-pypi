@@ -4,12 +4,12 @@
 #include <string>
 
 // Include glib and Windows headers before extern "C" so C++/template code in
-// them is not parsed with C linkage (fixes MinGW build: template with C linkage,
-// mmintrin.h __m64 errors).
+// them is not parsed with C linkage (fixes MinGW build: template with C
+// linkage, mmintrin.h __m64 errors).
 #include <glib.h>
 #if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__)
-#include <winsock2.h>
 #include <windows.h>
+#include <winsock2.h>
 #endif
 
 // Include GNUBG headers; wrap in extern "C" so C symbols link correctly.

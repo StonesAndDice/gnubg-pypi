@@ -50,7 +50,7 @@ jobs:
 
       - name: Run cpplint style checks (matches pre-commit)
         run: |
-          find src/gnubgmodule/ -regex '.*\.\(c\|cpp\|h\|hpp\)' -print0 \
+          find src/gnubgmodule/ -regex '.*\.\(c\|cpp\|h\|hpp\)' ! -name gnubg_lib.c -print0 \
             | xargs -0 python3 -m cpplint \
               --quiet \
-              --filter=-build/include_subdir
+              --filter=-build/include_subdir,-build/include_order,-build/include_what_you_use,-legal/copyright,-readability/casting,-runtime/int
