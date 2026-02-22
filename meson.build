@@ -57,10 +57,12 @@ install_data(
 # -U_FORTIFY_SOURCE: Fixes 'sprintf'/'__builtin_va_arg_pack' errors
 # -ffast-math: Performance optimization
 # -fgnu89-inline: FIXES the "multiple definition of atoi/vprintf" errors while allowing C11 syntax
-# -mno-mmx: On MinGW x86_64, avoids broken MMX intrinsics in windows.h -> mmintrin.h chain
-# -include skip_mmintrin.h: define _MMINTRIN_H_INCLUDED so real mmintrin.h is skipped when pulled in
+# On MinGW: -I win32_stub first so winnt.h gets our stub x86intrin.h/emmintrin.h (avoids broken MMX/AVX chain)
 c_args = ['-D_GNU_SOURCE', '-U_FORTIFY_SOURCE', '-ffast-math', '-fgnu89-inline']
-# Workaround removed for modern UCRT64
+if host_machine.system() == 'windows'
+  win32_stub = join_paths(meson.project_source_root(), 'win32_stub')
+  c_args += ['-mno-mmx', '-mno-avx', '-mno-avx2', '-I' + win32_stub]
+endif
 add_project_arguments(c_args, language: 'c')
 
 # --- Dependencies ---
@@ -72,6 +74,7 @@ sqlite_dep = dependency('sqlite3', required: false)
 png_dep = dependency('libpng', version: '>= 1.6', required: false)
 readline_dep = cc.find_library('readline', required: true)
 gmp_dep = cc.find_library('gmp', required: true)
+winmm_dep = cc.find_library('winmm', required: host_machine.system() == 'windows')
 
 # --- Configuration Updates ---
 conf_data = configuration_data()
@@ -211,13 +214,19 @@ install_subdir(
 )
 
 # --- Build Extension ---
-# On MinGW x86_64, -include skip_mmintrin.h and -mno-mmx avoid broken MMX intrinsics
+# On MinGW, -I win32_stub first so winnt.h gets our stub x86intrin.h/emmintrin.h
 py_ext_cpp_args = ['-fvisibility=default']
-# Workaround removed for modern UCRT64
+if host_machine.system() == 'windows'
+  py_ext_cpp_args += ['-mno-mmx', '-mno-avx', '-mno-avx2', '-I' + win32_stub]
+endif
+py_ext_deps = [python_dep, glib_dep]
+if host_machine.system() == 'windows'
+  py_ext_deps += [winmm_dep]
+endif
 py_ext = python3.extension_module(
     '_gnubg',
     'src/gnubgmodule/gnubgmodule.cpp',
-    dependencies : [python_dep, glib_dep],
+    dependencies : py_ext_deps,
     link_with : libgnubg,
     link_whole : libgnubg,
     include_directories : libgnubg_inc,

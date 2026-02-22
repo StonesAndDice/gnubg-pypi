@@ -80,6 +80,33 @@ It provides:
 * ❌ = Not built
 * macOS universal2 = Supports both ARM64 and x86-64 architectures
 
+## Building on Windows (local)
+
+To reproduce the Windows CI build locally and debug failures:
+
+1. **Install MSYS2** (e.g. from [msys2.org](https://www.msys2.org/)), then in an **MSYS2 UCRT64** shell install dependencies:
+
+   ```bash
+   pacman -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-pkg-config \
+     mingw-w64-ucrt-x86_64-glib2 mingw-w64-ucrt-x86_64-gmp \
+     mingw-w64-ucrt-x86_64-readline mingw-w64-ucrt-x86_64-sqlite3 \
+     mingw-w64-ucrt-x86_64-libpng mingw-w64-ucrt-x86_64-gettext
+   ```
+
+2. In **PowerShell** (from the repo root), run the build script (same steps as `.github/actions/build-wheel` on `windows-latest`):
+
+   ```powershell
+   .\scripts\build-windows-local.ps1
+   ```
+
+   This runs `meson setup` / `meson compile` only. To also build wheels with cibuildwheel:
+
+   ```powershell
+   .\scripts\build-windows-local.ps1 -Wheel
+   ```
+
+   If MSYS2 is not in `C:\msys64`, set `$env:MSYS2_ROOT` before running (e.g. `$env:MSYS2_ROOT = "D:\msys64"`).
+
 ## Testing
 
 gnubg-nn-pypi has some basic unit testing. After installation, run:
