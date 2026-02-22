@@ -60,10 +60,7 @@ install_data(
 # -mno-mmx: On MinGW x86_64, avoids broken MMX intrinsics in windows.h -> mmintrin.h chain
 # -include skip_mmintrin.h: define _MMINTRIN_H_INCLUDED so real mmintrin.h is skipped when pulled in
 c_args = ['-D_GNU_SOURCE', '-U_FORTIFY_SOURCE', '-ffast-math', '-fgnu89-inline']
-if host_machine.system() == 'windows'
-  win32_stub = join_paths(meson.current_source_dir(), 'win32_stub', 'skip_mmintrin.h')
-  c_args = ['-include', win32_stub, '-mno-mmx'] + c_args
-endif
+# Workaround removed for modern UCRT64
 add_project_arguments(c_args, language: 'c')
 
 # --- Dependencies ---
@@ -217,10 +214,7 @@ install_subdir(
 # --- Build Extension ---
 # On MinGW x86_64, -include skip_mmintrin.h and -mno-mmx avoid broken MMX intrinsics
 py_ext_cpp_args = ['-fvisibility=default']
-if host_machine.system() == 'windows'
-  win32_stub = join_paths(meson.current_source_dir(), 'win32_stub', 'skip_mmintrin.h')
-  py_ext_cpp_args = ['-include', win32_stub, '-mno-mmx'] + py_ext_cpp_args
-endif
+# Workaround removed for modern UCRT64
 py_ext = python3.extension_module(
     '_gnubg',
     'src/gnubgmodule/gnubgmodule.cpp',
