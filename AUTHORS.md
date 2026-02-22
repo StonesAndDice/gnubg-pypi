@@ -5,7 +5,7 @@ PyPi Authors and Maintainers
 ----------------------------
 
 David Reay <dr323090@falmouth.ac.uk>
-- Python3 module (gnubg-nn-pypi)
+- Python3 module (gnubg)
 - Package maintenance and PyPI integration
 
 Joseph Heled

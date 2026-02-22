@@ -2,7 +2,7 @@
 Core Concepts
 =============
 
-This section introduces the key internal concepts and data structures used by the `gnubg-nn-pypi` library, drawn from GNU Backgammon's original architecture.
+This section introduces the key internal concepts and data structures used by the **gnubg** library, drawn from GNU Backgammon's original architecture.
 
 Position ID
 -----------
@@ -78,5 +78,5 @@ Additional logic may include:
 - **Noise injection**: Simulate human-like variability
 - **Evaluation depth**: 0-ply, 1-ply, or 2-ply lookahead
 
-These mechanisms allow GNUBG and `gnubg-nn-pypi` to evaluate complex decisions with high precision.
+These mechanisms allow GNUBG and **gnubg** to evaluate complex decisions with high precision.
 

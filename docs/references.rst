@@ -44,8 +44,8 @@ Python and Project Utilities
 - **Meson Build System (used for C++ extension)**
   https://mesonbuild.com/
 
-- **PyPI Package Repository for `gnubg-nn-pypi`**
-  (Add your package link here once published)
+- **PyPI Package Repository for gnubg**
+  https://pypi.org/project/gnubg/
 
 Licenses
 --------

@@ -1,8 +1,8 @@
-Contributing Guide for gnubg-nn-pypi
-====================================
+Contributing Guide for gnubg (gnubg-pypi)
+=========================================
 
-Thank you for considering contributing to gnubg-nn-pypi, the Python bindings
-for the GNUBG neural-network evaluation engine.
+Thank you for considering contributing to **gnubg**, the Python bindings
+for the GNUBG backgammon engine (repository: gnubg-pypi).
 
 This project integrates with the upstream GNUBG C/C++ engine, maintained
 separately by the GNU Backgammon team.
@@ -10,7 +10,7 @@ separately by the GNU Backgammon team.
 You can contribute to either:
 
 1. **The GNUBG Project (C/C++ Core)**
-2. **The gnubg-nn-pypi Project (Python Bindings)**
+2. **The gnubg-pypi Project (Python Bindings)**
 
 Please read the relevant section(s) below based on your area of interest.
 
@@ -31,17 +31,17 @@ or C/C++ code:
 - Follow GNU project coding and license guidelines (GPL v2).
 
 ---------------------------------------------
-2. Contributing to gnubg-nn-pypi (Python API)
----------------------------------------------
+2. Contributing to gnubg-pypi (Python API)
+------------------------------------------
 
-The `gnubg-nn-pypi` project exposes core GNUBG functionality to Python.
+The **gnubg** package (gnubg-pypi repo) exposes core GNUBG functionality to Python.
 
-GitHub Repo: https://github.com/reayd-falmouth/gnubg-nn-pypi
+GitHub Repo: https://github.com/StonesAndDice/gnubg-pypi
 
 You can contribute by:
 
 - **Reporting Bugs:**  
-  File an issue at https://github.com/reayd-falmouth/gnubg-nn-pypi/issues
+  File an issue at https://github.com/StonesAndDice/gnubg-pypi/issues
 
 - **Writing Code:**
     - Fork the repository and create a feature branch.
@@ -75,7 +75,7 @@ Need Help?
 ---------------------
 
 Please reach out via:
-- GitHub Issues: https://github.com/reayd-falmouth/gnubg-nn-pypi/issues
+- GitHub Issues: https://github.com/StonesAndDice/gnubg-pypi/issues
 - Mailing List: https://lists.gnu.org/mailman/listinfo/gnubg
 
 Thank you for contributing to the GNUBG community!

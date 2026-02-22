@@ -1,4 +1,4 @@
-.. image:: https://raw.githubusercontent.com/reayd-falmouth/gnubg-nn-pypi/refs/heads/main/img/gerwinski-gnu-head.png
+.. image:: https://raw.githubusercontent.com/StonesAndDice/gnubg-pypi/refs/heads/main/img/gerwinski-gnu-head.png
    :alt: GNUBG Logo
    :align: center
    :width: 200px
@@ -6,16 +6,16 @@
 GNUBG
 =====
 
-.. image:: https://img.shields.io/pypi/dm/gnubg-nn-pypi.svg?label=PyPI%20downloads
-   :target: https://pypi.org/project/gnubg-nn-pypi/
+.. image:: https://img.shields.io/pypi/dm/gnubg.svg?label=PyPI%20downloads
+   :target: https://pypi.org/project/gnubg/
    :alt: PyPI Downloads
 
-.. image:: https://img.shields.io/conda/dn/conda-forge/gnubg-nn-pypi.svg?label=Conda%20downloads
-   :target: https://anaconda.org/conda-forge/gnubg-nn-pypi/
+.. image:: https://img.shields.io/conda/dn/conda-forge/gnubg.svg?label=Conda%20downloads
+   :target: https://anaconda.org/conda-forge/gnubg/
    :alt: Conda Downloads
 
-.. image:: https://img.shields.io/github/issues/gnubg/gnubg-nn-pypi.svg
-   :target: https://github.com/reayd-falmouth/gnubg-nn-pypi/issues
+.. image:: https://img.shields.io/github/issues/StonesAndDice/gnubg-pypi.svg
+   :target: https://github.com/StonesAndDice/gnubg-pypi/issues
    :alt: GitHub Issues
 
 .. image:: https://img.shields.io/badge/license-GPL%20v2-blue.svg
@@ -26,14 +26,14 @@ GNUBG
    :target: https://stackoverflow.com/questions/tagged/gnubg
    :alt: Ask on Stack Overflow
 
-GNUBG NeuralNet Python bindings bring the powerful GNUBG backgammon neural-network engine to Python 3.
+The **gnubg** Python package provides bindings that bring the powerful GNUBG backgammon engine to Python 3.
 
 **Project Links**
 
 - **Website:** https://www.gnu.org/software/gnubg/
 - **Documentation:** http://www.gnubg.org/documentation/doku.php?id=gnu_backgammon_faq
 - **Mailing list:** https://lists.gnu.org/mailman/listinfo/gnubg
-- **Source code:** https://github.com/reayd-falmouth/gnubg-nn-pypi
+- **Source code:** https://github.com/StonesAndDice/gnubg-pypi
 - **GNUBG Project:** https://git.savannah.gnu.org/cgit/gnubg/gnubg-nn.git
 - **Contributing:** https://savannah.gnu.org/people/
 - **Credits:** https://git.savannah.gnu.org/cgit/gnubg.git/tree/credits.sh
@@ -78,7 +78,7 @@ These models were used to assist with code generation, documentation drafting, a
 Code of Conduct
 ---------------
 
-Please read the `Code of Conduct <https://github.com/reayd-falmouth/gnubg-nn-pypi/blob/main/CONDUCT.md>`_
+Please read the `Code of Conduct <https://github.com/StonesAndDice/gnubg-pypi/blob/main/CONDUCT.md>`_
 to learn how to interact positively.
 
 Contributing
@@ -95,7 +95,7 @@ Your expertise and enthusiasm are welcome! You can contribute by:
 - Assisting with outreach and onboarding
 - Writing grant proposals or helping with fundraising
 
-For more information, see our `Contributing Guide <https://github.com/reayd-falmouth/gnubg-nn-pypi/blob/main/CONTRIBUTING.md>`_.
+For more information, see our `Contributing Guide <https://github.com/StonesAndDice/gnubg-pypi/blob/main/CONTRIBUTING.md>`_.
 If you’re unsure where to start, open an issue or join the discussion on our mailing list!
 
 Acknowledgments
@@ -106,7 +106,7 @@ This project builds upon the extensive work of the GNU Backgammon (GNUBG) commun
 
 We express our gratitude to all contributors who have dedicated their time and expertise to the development of GNUBG and its Python bindings.
 
-- **AUTHORS.md**: A list of primary contributors to the `gnubg-nn-pypi` project can be found `here <https://github.com/reayd-falmouth/gnubg-nn-pypi/blob/main/AUTHORS.md>`_.
+- **AUTHORS.md**: A list of primary contributors to the **gnubg** project can be found `here <https://github.com/StonesAndDice/gnubg-pypi/blob/main/AUTHORS.md>`_.
 - **GNUBG credits.sh**: For a comprehensive list of contributors to the core GNUBG project, see the `credits.sh <https://git.savannah.gnu.org/cgit/gnubg.git/tree/credits.sh>`_ file.
 
 We also thank the broader GNUBG community, including testers, translators, and mailing list participants, for their invaluable support.
