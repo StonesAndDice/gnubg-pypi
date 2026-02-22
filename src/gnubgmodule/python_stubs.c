@@ -12,16 +12,20 @@
  * libgnubg) - do not redefine here */
 
 /* Stub: Multithreading functions - not needed for Python module */
-void MT_Release(void) { /* Not needed - single threaded Python module */
+void MT_Release(void) {
+  (void)0; /* Not needed - single threaded Python module */
 }
 
-void MT_Exclusive(void) { /* Not needed - single threaded Python module */
+void MT_Exclusive(void) {
+  (void)0; /* Not needed - single threaded Python module */
 }
 
-void MT_Close(void) { /* Not needed - single threaded Python module */
+void MT_Close(void) {
+  (void)0; /* Not needed - single threaded Python module */
 }
 
-void MT_InitThreads(void) { /* Not needed - single threaded Python module */
+void MT_InitThreads(void) {
+  (void)0; /* Not needed - single threaded Python module */
 }
 
 void MT_CreateThreadLocalData(void *unused) {
@@ -67,8 +71,7 @@ void PythonInitialise(const char *argv0) {
 }
 
 /* Stub: Old Python interpreter shutdown */
-void PythonShutdown(void) { /* Not needed for Python module */
-}
+void PythonShutdown(void) { (void)0; /* Not needed for Python module */ }
 
 /* Stub: Old Python interpreter run command */
 void PythonRun(const char *sz) {
