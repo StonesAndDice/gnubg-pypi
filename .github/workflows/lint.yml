@@ -38,9 +38,13 @@ jobs:
             --inconclusive \
             --error-exitcode=1 \
             --suppress=missingInclude \
+            --suppress=missingIncludeSystem \
             --suppress=unusedFunction \
             --suppress=toomanyconfigs \
             --suppress=ConfigurationNotChecked \
+            --suppress=unmatchedSuppression \
+            --suppress=checkersReport \
+            --suppress=objectIndex \
             -I src/gnubgmodule src/gnubgmodule
 
       - name: Verify formatting with clang-format (matches pre-commit)

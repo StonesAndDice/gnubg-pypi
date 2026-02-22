@@ -3605,11 +3605,14 @@ static char *PlayerCompletionBoth(const char *sz, int nState) {
 }
 
 static command *FindContext(command *pc, char *szOrig, int ich) {
-  char *sz = (char *)g_alloca(strlen(szOrig) * sizeof(char) + 1);
+  size_t len = strlen(szOrig);
+  char *sz = (char *)g_alloca(len * sizeof(char) + 1);
   char *pch;
   command *pcResume = NULL;
 
   pch = strcpy(sz, szOrig);
+  if (ich < 0 || (size_t)ich > len)
+    ich = (int)len;
   pch[ich] = 0;
 
   do {
