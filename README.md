@@ -1,12 +1,12 @@
 <h1 align="center">
-<img src="https://raw.githubusercontent.com/reayd-falmouth/gnubg-nn-pypi/refs/heads/main/img/banner.png">
+<img src="https://raw.githubusercontent.com/StonesAndDice/gnubg-pypi/refs/heads/main/img/banner.png">
 
 GNUBG
 </h1>
 
-[![PyPI Downloads](https://img.shields.io/pypi/dm/gnubg-nn-pypi.svg?label=PyPI%20downloads)](https://pypi.org/project/gnubg-nn-pypi/)
-[![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/gnubg-nn-pypi.svg?label=Conda%20downloads)](https://anaconda.org/conda-forge/gnubg-nn-pypi/)
-[![GitHub issues](https://img.shields.io/github/issues/gnubg/gnubg-nn-pypi.svg)](https://github.com/reayd-falmouth/gnubg-nn-pypi/issues)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/gnubg.svg?label=PyPI%20downloads)](https://pypi.org/project/gnubg/)
+[![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/gnubg.svg?label=Conda%20downloads)](https://anaconda.org/conda-forge/gnubg/)
+[![GitHub issues](https://img.shields.io/github/issues/StonesAndDice/gnubg-pypi.svg)](https://github.com/StonesAndDice/gnubg-pypi/issues)
 [![License](https://img.shields.io/badge/license-GPL%20v2-blue.svg)](#license)
 [![Stack Overflow](https://img.shields.io/badge/stackoverflow-Ask%20questions-blue.svg)](https://stackoverflow.com/questions/tagged/gnubg)
 
@@ -47,7 +47,7 @@ sections below or visit the full documentation on [ReadTheDocs](https://gnubg.re
 * **Website:** [https://www.gnu.org/software/gnubg/](https://www.gnu.org/software/gnubg/)
 * **Original Documentation:** [http://www.gnubg.org/documentation/doku.php?id=gnu_backgammon_faq](http://www.gnubg.org/documentation/doku.php?id=gnu_backgammon_faq)
 * **Mailing list:** [https://lists.gnu.org/mailman/listinfo/gnubg](https://lists.gnu.org/mailman/listinfo/gnubg)
-* **Source code:** [https://github.com/reayd-falmouth/gnubg-nn-pypi](https://github.com/reayd-falmouth/gnubg-nn-pypi)
+* **Source code:** [https://github.com/StonesAndDice/gnubg-pypi](https://github.com/StonesAndDice/gnubg-pypi)
 * **GNUBG Project:** [https://git.savannah.gnu.org/cgit/gnubg/gnubg-nn.git](https://git.savannah.gnu.org/cgit/gnubg/gnubg-nn.git)
 * **Contributing:** [https://savannah.gnu.org/people/](https://savannah.gnu.org/people/)
 * **Credits:** [https://git.savannah.gnu.org/cgit/gnubg.git/tree/credits.sh](https://git.savannah.gnu.org/cgit/gnubg.git/tree/credits.sh)
@@ -109,7 +109,7 @@ To reproduce the Windows CI build locally and debug failures:
 
 ## Testing
 
-gnubg-nn-pypi has some basic unit testing. After installation, run:
+The **gnubg** package has basic unit testing. After installation, run:
 
 ```bash
 python3 -m unittest discover -s gnubg.tests
@@ -130,7 +130,7 @@ These models were used to assist with code generation, documentation drafting, a
 
 ## Code of Conduct
 
-Please read the [Code of Conduct](https://github.com/reayd-falmouth/gnubg-nn-pypi/blob/main/CONDUCT.md) to learn how to interact positively.
+Please read the [Code of Conduct](https://github.com/StonesAndDice/gnubg-pypi/blob/main/CONDUCT.md) to learn how to interact positively.
 
 ## Contributing
 
@@ -145,7 +145,7 @@ Your expertise and enthusiasm are welcome! You can contribute by:
 * Assisting with outreach and onboarding
 * Writing grant proposals or helping with fundraising
 
-For more information, see our [Contributing Guide](https://github.com/reayd-falmouth/gnubg-nn-pypi/blob/main/CONTRIBUTING.md). If you’re unsure where to start, open an issue or join the discussion on our mailing list!
+For more information, see our [Contributing Guide](https://github.com/StonesAndDice/gnubg-pypi/blob/main/CONTRIBUTING.md). If you’re unsure where to start, open an issue or join the discussion on our mailing list!
 
 ## Acknowledgments
 
@@ -154,7 +154,7 @@ This project builds upon the extensive work of the GNU Backgammon (GNUBG) commun
 
 We express our gratitude to all contributors who have dedicated their time and expertise to the development of GNUBG.
 
-- **AUTHORS.md**: A list of primary contributors to the `gnubg-nn-pypi` project can be found [here](https://github.com/reayd-falmouth/gnubg-nn-pypi/blob/main/AUTHORS.md).
+- **AUTHORS.md**: A list of primary contributors to the **gnubg** project can be found [here](https://github.com/StonesAndDice/gnubg-pypi/blob/main/AUTHORS.md).
 - **GNUBG credits.sh**: For a comprehensive list of contributors to the core GNUBG project, please refer to the [credits.sh](https://git.savannah.gnu.org/cgit/gnubg.git/tree/credits.sh) file.
 
 We also thank the broader GNUBG community, including testers, translators, and mailing list participants, for their invaluable support.
