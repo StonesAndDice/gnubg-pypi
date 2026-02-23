@@ -167,6 +167,7 @@ c_sources = files(
     'src/gnubg/matchequity.c',
     'src/gnubg/matchid.c',
     'src/gnubg/mec.c',
+    'src/gnubg/mtsupport.c',
     'src/gnubg/multithread.c',
     'src/gnubg/openurl.c',
     'src/gnubg/osr.c',
@@ -206,8 +207,13 @@ libgnubg = static_library(
 
 gnubg_engine_dep = declare_dependency(link_with : libgnubg).as_link_whole()
 
-# --- Install Data Files ---
-# Install the 'data' folder into site-packages/gnubg/data
+# --- Data dir: required for build; installed next to the extension so the package is self-contained ---
+fs = import('fs')
+data_weights = join_paths(meson.project_source_root(), 'src', 'gnubgmodule', 'data', 'gnubg.weights')
+if not fs.exists(data_weights)
+  error('Data dir is required: gnubg.weights not found at src/gnubgmodule/data/gnubg.weights. The package loads data from the directory next to the compiled extension (no environment variable needed).')
+endif
+# Install the full data tree into site-packages/gnubg/data (weights, bearoff, met, etc.)
 install_subdir(
     'src/gnubgmodule/data',
     install_dir: join_paths(python3.get_install_dir(), 'gnubg')
@@ -222,6 +228,8 @@ endif
 py_ext_deps = [python_dep, glib_dep]
 if host_machine.system() == 'windows'
   py_ext_deps += [winmm_dep]
+else
+  py_ext_deps += [cc.find_library('dl', required : true)]
 endif
 py_ext = python3.extension_module(
     '_gnubg',

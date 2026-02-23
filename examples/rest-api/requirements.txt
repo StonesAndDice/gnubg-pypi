@@ -1,0 +1,3 @@
+# REST API example for gnubg – best move and cube evaluation
+# Install gnubg first (pip install gnubg or from source).
+flask>=3.0.0

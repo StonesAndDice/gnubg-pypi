@@ -42,9 +42,8 @@
 #endif
 #include "multithread.h"
 
-/* AUTHORITATIVE DEFINITION: Allocate memory for the global thread data */
-/* This prevents the 'undefined symbol: td' runtime error. */
-ThreadData td;
+/* Thread data is defined in mtsupport.c (linked when building with mtsupport). */
+extern ThreadData td;
 
 #include "glib-ext.h"
 #include "gnubgmodule.h"
@@ -4377,6 +4376,9 @@ static void PushSplash(char *UNUSED(unused), char *UNUSED(heading),
                        char *UNUSED(message)) {}
 #endif
 
+static void init_defaults(void);
+static void init_rng(void);
+
 static void init_nets(int fNoBearoff) {
   char *gnubg_weights = BuildFilename("gnubg.weights");
   char *gnubg_weights_binary = BuildFilename("gnubg.wd");
@@ -4384,6 +4386,44 @@ static void init_nets(int fNoBearoff) {
                  fShowProgress ? BearoffProgress : NULL);
   g_free(gnubg_weights);
   g_free(gnubg_weights_binary);
+}
+
+/* Set package data dir so BuildFilename finds weights/bearoff. Uses gnubg/util.h globals. */
+void gnubg_lib_set_pkg_datadir(const char *path) {
+  if (path) {
+    if (pkg_datadir)
+      g_free(pkg_datadir);
+    if (datadir)
+      g_free(datadir);
+    pkg_datadir = g_strdup(path);
+    datadir = g_strdup(path);
+  }
+}
+
+/* Minimal init for standalone Python module use (e.g. REST API).
+ * Ensures neural nets and match equity are loaded so evaluate/findbestmove work. */
+void gnubg_lib_init_for_python(void) {
+  static int done = 0;
+  if (done)
+    return;
+  done = 1;
+  if (!default_import_folder) {
+    default_import_folder = g_strdup(".");
+    default_export_folder = g_strdup(".");
+    default_sgf_folder = g_strdup(".");
+  }
+  output_initialize();
+  init_defaults();
+  DefaultDBSettings();
+  init_rng();
+  {
+    char *met = BuildFilename2("met", "Kazaross-XG2.xml");
+    InitMatchEquity(met);
+    g_free(met);
+  }
+  init_nets(0);
+  glib_ext_init();
+  MT_InitThreads();
 }
 
 extern int GetManualDice(unsigned int anDice[2]) {

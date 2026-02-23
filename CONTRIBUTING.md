@@ -61,6 +61,39 @@ You can contribute by:
   We welcome translated materials, packaging help, and educational outreach.
 
 --------------------------------
+Building from source (WSL / editable install)
+--------------------------------
+
+The build uses **Meson** (>= 1.7.0) and **Ninja** (>= 1.8.2). Both must be on your
+``PATH`` when running ``pip install`` and when Python later runs the editable
+rebuild (e.g. on first ``import gnubg``).
+
+**1. Install Meson and Ninja (recommended: system packages in WSL)**
+
+- Ubuntu/Debian: ``sudo apt update && sudo apt install meson ninja-build``
+- Ensure versions: ``meson --version`` (e.g. 1.8.x or 1.10.x), ``ninja --version`` (e.g. 1.10+).
+
+**2. If you see "incompatible with the current version" or "Could not detect Ninja"**
+
+- Remove the build tree so Meson reconfigures from scratch:
+  ``rm -rf build/``
+- Put **both** ``meson`` and ``ninja`` on ``PATH`` (e.g. install with ``apt`` above).
+  Passing only ``NINJA=...`` may not be enough for the editable loader’s rebuild.
+
+**3. Optional: use a virtualenv so Meson version is consistent**
+
+- ``python3 -m venv .venv && source .venv/bin/activate``
+- ``pip install meson ninja`` (or rely on system ``meson``/``ninja`` if on ``PATH``).
+- ``pip install -e . --no-build-isolation``
+
+**4. WSL-only: if ``ninja`` is not found (e.g. PATH points at Windows)**
+
+- **Option A:** ``sudo apt install ninja-build`` (recommended).
+- **Option B:** Download [Ninja for Linux](https://github.com/ninja-build/ninja/releases),
+  put the binary in e.g. ``.build-tools/ninja``, and add that directory to ``PATH``
+  before running pip: ``export PATH="$PWD/.build-tools:$PATH"`` then ``pip install -e .``.
+
+--------------------------------
 Licensing and Code Ownership
 --------------------------------
 

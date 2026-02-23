@@ -176,3 +176,6 @@ gnubg.egg-info
 gnubg-*.dist-info
 .vs
 *.tar.gz
+
+# Local build tools (e.g. ninja for WSL when system ninja is not available)
+.build-tools/

@@ -1,7 +1,9 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include <algorithm>
 #include <cstring>
 #include <string>
+#include <vector>
 
 // Include glib and Windows headers before extern "C" so C++/template code in
 // them is not parsed with C linkage (fixes MinGW build: template with C
@@ -26,9 +28,13 @@ extern "C" {
 #include "output.h"       // foutput_to_mem, szMemOutput (for show)
 #include "positionid.h"  // Position ID functions, PositionBearoff, PositionFromBearoff, Combination
 }
+#include <cstdlib>  // std::getenv
 #include <cerrno>   // errno
 #include <climits>  // INT_MIN (for navigate)
 #include <csignal>  // SIGINT (for command)
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+#include <dlfcn.h>
+#endif
 
 /* -------------------------------------------------------------------------
  * Helper Functions
@@ -1107,6 +1113,112 @@ static PyObject *PythonFindBestMove(PyObject *self, PyObject *args) {
 }
 
 /*
+ * Exposed as: gnubg.findbestmoves(...)
+ * Same args as findbestmove. Returns list of dicts {"move": [(from,to),...], "score": float},
+ * ordered by score descending (best first). Best move is moves[0]["move"].
+ */
+static PyObject *PythonFindBestMoves(PyObject *self, PyObject *args) {
+  PyObject *pyBoard = NULL;
+  PyObject *pyCubeInfo = NULL;
+  PyObject *pyEvalContext = NULL;
+  PyObject *pyDice = NULL;
+  PyObject *pyMoveFilters = NULL;
+  TanBoard anBoard;
+  cubeinfo ci;
+  evalcontext ec;
+  movefilter aamf[MAX_FILTER_PLIES][MAX_FILTER_PLIES];
+  movelist ml;
+  int anDice[2] = {0, 0};
+
+  (void)self;
+  memcpy(anBoard, msBoard(), sizeof(TanBoard));
+  GetMatchStateCubeInfo(&ci, &ms);
+  memcpy(&ec, &ecBasic, sizeof(evalcontext));
+  memcpy(aamf, defaultFilters, sizeof(aamf));
+
+  if (!PyArg_ParseTuple(args, "|OOOOO:findbestmoves", &pyBoard, &pyCubeInfo,
+                        &pyEvalContext, &pyDice, &pyMoveFilters))
+    return NULL;
+
+  if (pyDice && !PyToDice(pyDice, anDice)) {
+    PyErr_SetString(PyExc_TypeError,
+                    "dice must be a sequence of 2 integers (1-6)");
+    return NULL;
+  }
+  if (!pyDice && ms.gs == GAME_PLAYING && ms.anDice[0] >= 1 &&
+      ms.anDice[0] <= 6 && ms.anDice[1] >= 1 && ms.anDice[1] <= 6) {
+    anDice[0] = ms.anDice[0];
+    anDice[1] = ms.anDice[1];
+  }
+  if (anDice[0] < 1 || anDice[0] > 6 || anDice[1] < 1 || anDice[1] > 6) {
+    PyErr_SetString(PyExc_ValueError,
+                    "dice required: provide (die1, die2) with values 1-6");
+    return NULL;
+  }
+
+  if (pyBoard && !PyToBoard(pyBoard, anBoard)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid board format");
+    return NULL;
+  }
+  if (pyCubeInfo && PyToCubeInfo(pyCubeInfo, &ci) != 0)
+    return NULL;
+  if (pyEvalContext && PyToEvalContext(pyEvalContext, &ec) != 0)
+    return NULL;
+  if (pyMoveFilters && PyToMoveFilters(pyMoveFilters, aamf) != 0)
+    return NULL;
+
+  if (FindnSaveBestMoves(&ml, anDice[0], anDice[1], (ConstTanBoard)anBoard,
+                        NULL, 0.0f, &ci, &ec, aamf) < 0) {
+    PyErr_SetString(PyExc_RuntimeError, "FindnSaveBestMoves failed");
+    return NULL;
+  }
+
+  /* Build (score, move_tuple) pairs and sort by score descending */
+  std::vector<std::pair<float, std::vector<long>>> scored;
+  scored.reserve(ml.cMoves);
+  for (unsigned int i = 0; i < ml.cMoves; i++) {
+    const move *pm = &ml.amMoves[i];
+    std::vector<long> m;
+    for (int k = 0; k < 8 && pm->anMove[k] >= 0; k++)
+      m.push_back(pm->anMove[k] + 1);
+    scored.push_back(std::make_pair(pm->rScore, std::move(m)));
+  }
+  g_free(ml.amMoves);
+
+  std::sort(scored.begin(), scored.end(),
+            [](const std::pair<float, std::vector<long>> &a,
+               const std::pair<float, std::vector<long>> &b) {
+              return a.first > b.first;
+            });
+
+  PyObject *list = PyList_New(0);
+  if (!list)
+    return NULL;
+  for (const auto &p : scored) {
+    PyObject *moveTuple = PyTuple_New((Py_ssize_t)p.second.size());
+    if (!moveTuple) {
+      Py_DECREF(list);
+      return NULL;
+    }
+    for (size_t k = 0; k < p.second.size(); ++k)
+      PyTuple_SET_ITEM(moveTuple, (Py_ssize_t)k, PyLong_FromLong(p.second[k]));
+    PyObject *dict = Py_BuildValue("{s:O s:f}", "move", moveTuple, "score", p.first);
+    Py_DECREF(moveTuple);
+    if (!dict) {
+      Py_DECREF(list);
+      return NULL;
+    }
+    if (PyList_Append(list, dict) != 0) {
+      Py_DECREF(dict);
+      Py_DECREF(list);
+      return NULL;
+    }
+    Py_DECREF(dict);
+  }
+  return list;
+}
+
+/*
  * Ported from gnubgmodule.c: PythonClassifyPosition
  * Exposed as: gnubg.classify(board, variant)
  * Classifies a backgammon position.
@@ -2151,14 +2263,25 @@ static PyObject *PythonCommand(PyObject *self, PyObject *args) {
   const char *pch = NULL;
   char *sz = NULL;
   psighandler sh;
+  int suppress_output = 0;
   if (!PyArg_ParseTuple(args, "s:command", &pch))
     return NULL;
   sz = g_strdup(pch);
+  {
+    char *trimmed = g_strstrip(sz);
+    if (g_ascii_strncasecmp(trimmed, "new session", 11) == 0 &&
+        (trimmed[11] == '\0' || g_ascii_isspace(trimmed[11])))
+      suppress_output = 1;
+  }
+  if (suppress_output)
+    outputoff();
   PortableSignal(SIGINT, HandleInterrupt, &sh, FALSE);
   HandleCommand(sz, acTop);
   while (fNextTurn)
     NextTurn(TRUE);
   outputx();
+  if (suppress_output)
+    outputon();
   g_free(sz);
   PortableSignalRestore(SIGINT, &sh);
   if (MT_SafeGet(&fInterrupt)) {
@@ -2318,6 +2441,11 @@ static PyMethodDef GnubgMethods[] = {
      "(dice required if no game)\n"
      "    returns: tuple of (from, to) pairs, 1-based"},
 
+    {"findbestmoves", PythonFindBestMoves, METH_VARARGS,
+     "Find all legal moves for position and dice, ordered by score (best first)\n"
+     "    arguments: same as findbestmove\n"
+     "    returns: list of dicts {\"move\": (from,to,...), \"score\": float}"},
+
     {"met", PythonMET, METH_VARARGS,
      "Return match equity table\n"
      "    arguments: [max score] (optional)\n"
@@ -2433,8 +2561,94 @@ static struct PyModuleDef gnubgmodule = {
     PyModuleDef_HEAD_INIT, "_gnubg",
     "Python bindings for the full GNUBG engine", -1, GnubgMethods};
 
+// Helper: return true if path contains gnubg.wd or gnubg.weights (validate data dir)
+static bool data_dir_has_weights(const char *dir) {
+  if (!dir)
+    return false;
+  std::string base(dir);
+  FILE *f = fopen((base + "/gnubg.wd").c_str(), "rb");
+  if (f) {
+    fclose(f);
+    return true;
+  }
+  f = fopen((base + "/gnubg.weights").c_str(), "r");
+  if (f) {
+    fclose(f);
+    return true;
+  }
+  return false;
+}
+
+// Set package data dir: prefer GNUBG_DATA_DIR env (override), then path relative to
+// this shared object so the package is self-contained and no env var is required.
+static void set_pkg_datadir_from_module(void) {
+  auto try_set = [](const std::string &data_dir) -> bool {
+    if (data_dir_has_weights(data_dir.c_str())) {
+      gnubg_lib_set_pkg_datadir(data_dir.c_str());
+      return true;
+    }
+    return false;
+  };
+  const char *env_dir = std::getenv("GNUBG_DATA_DIR");
+  if (env_dir && env_dir[0] && try_set(env_dir))
+    return;
+  auto data_dir_from_base = [](const std::string &base) -> std::string {
+    if (base.size() >= 5 && base.compare(base.size() - 5, 5, "gnubg") == 0 &&
+        (base.size() == 5 || base[base.size() - 6] == '/' || base[base.size() - 6] == '\\'))
+      return base + "/data";
+    return base + "/gnubg/data";
+  };
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+  Dl_info info;
+  if (dladdr(reinterpret_cast<void *>(&set_pkg_datadir_from_module), &info) && info.dli_fname) {
+    std::string path(info.dli_fname);
+    size_t slash = path.find_last_of("/\\");
+    if (slash != std::string::npos) {
+      std::string dir = path.substr(0, slash);
+      if (try_set(data_dir_from_base(dir)))
+        return;
+      // Editable build: .so in build/cp310/ -> try source (prefer package data: weights + bearoff + met)
+      if (dir.find("build") != std::string::npos) {
+        size_t build_pos = dir.find("build");
+        std::string prefix = dir.substr(0, build_pos);
+        if (try_set(prefix + "src/gnubgmodule/data"))
+          return;
+        if (try_set(prefix + "src/gnubg"))
+          return;
+      }
+    }
+  }
+#elif defined(_WIN32) || defined(WIN32)
+  char path[MAX_PATH];
+  HMODULE hMod = NULL;
+  if (GetModuleHandleExA(
+          GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+          reinterpret_cast<LPCSTR>(&set_pkg_datadir_from_module), &hMod) &&
+      hMod && GetModuleFileNameA(hMod, path, sizeof(path))) {
+    std::string s(path);
+    size_t slash = s.find_last_of("/\\");
+    if (slash != std::string::npos) {
+      std::string data_dir = data_dir_from_base(s.substr(0, slash));
+      std::replace(data_dir.begin(), data_dir.end(), '/', '\\');
+      if (try_set(data_dir))
+        return;
+      if (s.find("build") != std::string::npos) {
+        size_t build_pos = s.find("build");
+        std::string src_data = s.substr(0, build_pos) + "src\\gnubgmodule\\data";
+        if (try_set(src_data))
+          return;
+      }
+    }
+  }
+#endif
+}
+
 // Initialization function - must have C linkage for Python to find it
 // Explicitly export the symbol to ensure it's visible
 extern "C" {
-PyMODINIT_FUNC PyInit__gnubg(void) { return PyModule_Create(&gnubgmodule); }
+PyMODINIT_FUNC PyInit__gnubg(void) {
+  set_pkg_datadir_from_module();
+  gnubg_lib_init_for_python();
+  return PyModule_Create(&gnubgmodule);
+}
 }
