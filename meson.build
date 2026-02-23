@@ -52,6 +52,12 @@ install_data(
     install_dir: join_paths(pkgdir, pkg_name, 'data')
 )
 
+# Install examples with the package (e.g. site-packages/gnubg/examples/)
+install_subdir(
+    'src/gnubgmodule/examples',
+    install_dir: join_paths(pkgdir, pkg_name),
+)
+
 # --- Critical Fixes ---
 # -D_GNU_SOURCE: Exposes POSIX symbols
 # -U_FORTIFY_SOURCE: Fixes 'sprintf'/'__builtin_va_arg_pack' errors
@@ -167,6 +173,7 @@ c_sources = files(
     'src/gnubg/matchequity.c',
     'src/gnubg/matchid.c',
     'src/gnubg/mec.c',
+    'src/gnubg/mtsupport.c',
     'src/gnubg/multithread.c',
     'src/gnubg/openurl.c',
     'src/gnubg/osr.c',
@@ -206,22 +213,35 @@ libgnubg = static_library(
 
 gnubg_engine_dep = declare_dependency(link_with : libgnubg).as_link_whole()
 
-# --- Install Data Files ---
-# Install the 'data' folder into site-packages/gnubg/data
+# --- Data dir: required for build; installed next to the extension so the package is self-contained ---
+fs = import('fs')
+data_weights = join_paths(meson.project_source_root(), 'src', 'gnubgmodule', 'data', 'gnubg.weights')
+if not fs.exists(data_weights)
+  error('Data dir is required: gnubg.weights not found at src/gnubgmodule/data/gnubg.weights. The package loads data from the directory next to the compiled extension (no environment variable needed).')
+endif
+# Install the full data tree into site-packages/gnubg/data (weights, bearoff, met, etc.)
 install_subdir(
     'src/gnubgmodule/data',
     install_dir: join_paths(python3.get_install_dir(), 'gnubg')
 )
 
 # --- Build Extension ---
+# C++11 required for lambdas, range-for, and nested template '>>' in gnubgmodule.cpp
+cpp = meson.get_compiler('cpp')
+if cpp.get_id() == 'msvc'
+  py_ext_cpp_args = ['/std:c++14']
+else
+  py_ext_cpp_args = ['-std=c++11', '-fvisibility=default']
+endif
 # On MinGW, -I win32_stub first so winnt.h gets our stub x86intrin.h/emmintrin.h
-py_ext_cpp_args = ['-fvisibility=default']
 if host_machine.system() == 'windows'
   py_ext_cpp_args += ['-mno-mmx', '-mno-avx', '-mno-avx2', '-I' + win32_stub]
 endif
 py_ext_deps = [python_dep, glib_dep]
 if host_machine.system() == 'windows'
   py_ext_deps += [winmm_dep]
+else
+  py_ext_deps += [cc.find_library('dl', required : true)]
 endif
 py_ext = python3.extension_module(
     '_gnubg',
@@ -240,7 +260,11 @@ test_env.set('PYTHONPATH', [meson.project_build_root()])
 
 test('python_tests',
     python3,
-    args: ['-m', 'pytest', join_paths(meson.project_source_root(), 'tests')],
+    args: [
+        '-m', 'pytest',
+        join_paths(meson.project_source_root(), 'tests'),
+        join_paths(meson.project_source_root(), 'src/gnubgmodule/examples/rest-api/test_rest_api.py'),
+    ],
     env: test_env,
     workdir: meson.project_source_root()
 )

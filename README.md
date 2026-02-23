@@ -43,6 +43,10 @@ print(f"Win: {win:.3f}, Gammon: {gamm:.3f}, Backgammon: {bg:.3f}, Equity: {equit
 That’s all you need to get up and running! For detailed API docs, advanced build options, and configuration, see the 
 sections below or visit the full documentation on [ReadTheDocs](https://gnubg.readthedocs.io/en/latest/).
 
+**Data files:** Weights, bearoff tables, and match-equity data are included in the package and loaded from the directory next to the compiled extension (`gnubg/data`). No environment variable is required for normal installs. To override the location (e.g. for a custom build), set `GNUBG_DATA_DIR` to the directory containing `gnubg.weights`.
+
+**Examples:** Example projects (e.g. a REST API for best-move and evaluation) are distributed with the package under `gnubg/examples/`. After installing, find them with `import gnubg, os; print(os.path.join(os.path.dirname(gnubg.__file__), 'examples'))`. See the `README.md` in that directory for how to run them.
+
 * **ReadTheDocs** [https://gnubg.readthedocs.io/en/latest/](https://gnubg.readthedocs.io/en/latest/)
 * **Website:** [https://www.gnu.org/software/gnubg/](https://www.gnu.org/software/gnubg/)
 * **Original Documentation:** [http://www.gnubg.org/documentation/doku.php?id=gnu_backgammon_faq](http://www.gnubg.org/documentation/doku.php?id=gnu_backgammon_faq)

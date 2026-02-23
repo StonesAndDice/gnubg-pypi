@@ -29,9 +29,11 @@
 extern "C" {
 #endif
 
-// Add any function declarations here that need to be accessible from C/C++
-// For example, if you wrap any C functions for the Python interface:
-// int some_exported_function(int x);
+/* Set package data directory (e.g. .../gnubg/data) so weights/bearoff are found. Call before gnubg_lib_init_for_python. */
+void gnubg_lib_set_pkg_datadir(const char *path);
+
+/* Ensure neural nets and match equity are loaded (for standalone Python module use). */
+void gnubg_lib_init_for_python(void);
 
 #ifdef __cplusplus
 }

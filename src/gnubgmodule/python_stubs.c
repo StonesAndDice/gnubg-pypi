@@ -11,58 +11,8 @@
 /* fClockwise, DrawBoard, FIBSBoard are defined in drawboard.c (linked via
  * libgnubg) - do not redefine here */
 
-/* Stub: Multithreading functions - not needed for Python module */
-void MT_Release(void) {
-  (void)0; /* Not needed - single threaded Python module */
-}
-
-void MT_Exclusive(void) {
-  (void)0; /* Not needed - single threaded Python module */
-}
-
-void MT_Close(void) {
-  (void)0; /* Not needed - single threaded Python module */
-}
-
-void MT_InitThreads(void) {
-  (void)0; /* Not needed - single threaded Python module */
-}
-
-void MT_CreateThreadLocalData(void *unused) {
-  /* Not needed - single threaded Python module */
-  (void)unused;
-}
-
-void Mutex_Lock(void *unused) {
-  /* Not needed - single threaded Python module */
-  (void)unused;
-}
-
-void Mutex_Release(void *unused) {
-  /* Not needed - single threaded Python module */
-  (void)unused;
-}
-
-void ResetManualEvent(void *unused) {
-  /* Not needed - single threaded Python module */
-  (void)unused;
-}
-
-void SetManualEvent(void *unused) {
-  /* Not needed - single threaded Python module */
-  (void)unused;
-}
-
-void WaitForManualEvent(void *unused) {
-  /* Not needed - single threaded Python module */
-  (void)unused;
-}
-
-void TLSSetValue(void *unused1, void *unused2) {
-  /* Not needed - single threaded Python module */
-  (void)unused1;
-  (void)unused2;
-}
+/* Multithreading: real MT_InitThreads, MT_Close, TLSCreate, TLSSetValue, etc.
+ * come from mtsupport.c so eval has valid nnState (MT_Get_nnState()). No stubs here. */
 
 /* Stub: Old Python interpreter initialization */
 void PythonInitialise(const char *argv0) {
@@ -86,11 +36,7 @@ void LoadPythonFile(const char *sz, int fQuiet) {
   (void)fQuiet;
 }
 
-/* Stub: Thread cleanup (from mtsupport.c) */
-void CloseThread(void *unused) {
-  /* Not needed for Python module - no threading */
-  (void)unused;
-}
+/* CloseThread: provided by mtsupport.c (used by MT_CloseThreads) */
 
 /* DrawBoard and FIBSBoard are defined in drawboard.c (linked via libgnubg) - do
  * not stub here */
