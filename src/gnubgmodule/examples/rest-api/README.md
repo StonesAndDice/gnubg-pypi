@@ -10,22 +10,16 @@ A minimal REST API that uses the **gnubg** Python package to return the best mov
 
 ## Install and run
 
-From this directory:
+From this directory (the `rest-api` example directory, e.g. inside the installed package at `gnubg/examples/rest-api/`):
 
 ```bash
 pip install -r requirements.txt
 flask --app app run --no-reload
 ```
 
-Use `--no-reload` because the gnubg native extension can segfault when the Flask dev server forks for reloading. The app runs with `threaded=False` so that all requests are handled on the main thread (the engine’s thread-local state is only valid there). By default the server listens on `http://127.0.0.1:5000`. Use `--host 0.0.0.0` to listen on all interfaces.
+Use `--no-reload` because the gnubg native extension can segfault when the Flask dev server forks for reloading. The app runs with `threaded=False` so that all requests are handled on the main thread (the engine's thread-local state is only valid there). By default the server listens on `http://127.0.0.1:5000`. Use `--host 0.0.0.0` to listen on all interfaces.
 
-**If you installed gnubg in editable mode** (`pip install -e .` from the repo root), ensure the package is built first so the native extension exists. From the **repository root** (e.g. `gnubg-pypi/`), run:
-
-```bash
-pip install -e .
-```
-
-Then run the Flask app from `examples/rest-api/` as above. If you see `FileNotFoundError` for `build/cp310` (or similar), the editable build is out of date—run `pip install -e .` from the repo root again.
+**If you installed gnubg in editable mode** (`pip install -e .` from the repo root), ensure the package is built first so the native extension exists. Run `pip install -e .` from the repo root, then run the Flask app from this directory as above. If you see `FileNotFoundError` for `build/cp310` (or similar), the editable build is out of date—run `pip install -e .` from the repo root again.
 
 ### Troubleshooting
 

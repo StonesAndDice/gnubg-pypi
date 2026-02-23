@@ -52,6 +52,12 @@ install_data(
     install_dir: join_paths(pkgdir, pkg_name, 'data')
 )
 
+# Install examples with the package (e.g. site-packages/gnubg/examples/)
+install_subdir(
+    'src/gnubgmodule/examples',
+    install_dir: join_paths(pkgdir, pkg_name),
+)
+
 # --- Critical Fixes ---
 # -D_GNU_SOURCE: Exposes POSIX symbols
 # -U_FORTIFY_SOURCE: Fixes 'sprintf'/'__builtin_va_arg_pack' errors
@@ -220,8 +226,14 @@ install_subdir(
 )
 
 # --- Build Extension ---
+# C++11 required for lambdas, range-for, and nested template '>>' in gnubgmodule.cpp
+cpp = meson.get_compiler('cpp')
+if cpp.get_id() == 'msvc'
+  py_ext_cpp_args = ['/std:c++14']
+else
+  py_ext_cpp_args = ['-std=c++11', '-fvisibility=default']
+endif
 # On MinGW, -I win32_stub first so winnt.h gets our stub x86intrin.h/emmintrin.h
-py_ext_cpp_args = ['-fvisibility=default']
 if host_machine.system() == 'windows'
   py_ext_cpp_args += ['-mno-mmx', '-mno-avx', '-mno-avx2', '-I' + win32_stub]
 endif
@@ -248,7 +260,11 @@ test_env.set('PYTHONPATH', [meson.project_build_root()])
 
 test('python_tests',
     python3,
-    args: ['-m', 'pytest', join_paths(meson.project_source_root(), 'tests')],
+    args: [
+        '-m', 'pytest',
+        join_paths(meson.project_source_root(), 'tests'),
+        join_paths(meson.project_source_root(), 'src/gnubgmodule/examples/rest-api/test_rest_api.py'),
+    ],
     env: test_env,
     workdir: meson.project_source_root()
 )

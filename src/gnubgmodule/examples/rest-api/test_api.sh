@@ -13,7 +13,7 @@ run_json() {
   body=$(echo "$resp" | sed '$d')
   if [ -z "$body" ]; then
     echo "(empty response, HTTP $code)"
-    echo "If the server crashed (e.g. segfault in gnubg), see examples/rest-api/README.md troubleshooting."
+    echo "If the server crashed (e.g. segfault in gnubg), see README.md troubleshooting in this directory."
     return 1
   fi
   echo "$body" | python3 -m json.tool 2>/dev/null || echo "$body"

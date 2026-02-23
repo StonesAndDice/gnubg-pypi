@@ -1,6 +1,6 @@
 """
 REST API tests using Flask test client (no server required).
-Run from repo root with: pytest examples/rest-api/test_rest_api.py -v
+Run from repo root: pytest src/gnubgmodule/examples/rest-api/test_rest_api.py -v
 Or from this directory: pytest test_rest_api.py -v
 Requires gnubg package to be built and installable.
 """
@@ -10,7 +10,7 @@ import sys
 
 import pytest
 
-# Ensure examples/rest-api is on path so "from app import app" works
+# Ensure this directory is on path so "from app import app" works
 _suite_dir = os.path.dirname(os.path.abspath(__file__))
 if _suite_dir not in sys.path:
     sys.path.insert(0, _suite_dir)
