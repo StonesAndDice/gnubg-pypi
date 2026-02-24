@@ -217,8 +217,12 @@ class TestEvaluateFindbestmoveRolloutcontext(unittest.TestCase):
         self.assertTrue(callable(gnubg.evaluate))
 
     def test_evaluate_returns_six_floats(self):
-        """Test evaluate(board, cubeinfo, evalcontext) returns tuple of 6 floats. Requires engine init."""
-        self.skipTest("evaluate() requires neural net init (run gnubg.command('new session') first in interactive use)")
+        """Test evaluate(board, cubeinfo, evalcontext) returns tuple of 6 floats. Engine init at import."""
+        out = gnubg.evaluate(self.start_board, self.cubeinfo, self.evalcontext)
+        self.assertIsInstance(out, (list, tuple))
+        self.assertEqual(len(out), 6)
+        for i, v in enumerate(out):
+            self.assertIsInstance(v, (int, float), f"evaluate[{i}] should be numeric")
 
     def test_findbestmove_exists(self):
         """Test that findbestmove function exists."""
@@ -226,8 +230,10 @@ class TestEvaluateFindbestmoveRolloutcontext(unittest.TestCase):
         self.assertTrue(callable(gnubg.findbestmove))
 
     def test_findbestmove_with_dice(self):
-        """Test findbestmove(board, cubeinfo, evalcontext, dice) returns move tuple. Requires engine init."""
-        self.skipTest("findbestmove() requires neural net init (run gnubg.command('new session') first in interactive use)")
+        """Test findbestmove(board, cubeinfo, evalcontext, dice) returns move tuple. Engine init at import."""
+        move = gnubg.findbestmove(self.start_board, self.cubeinfo, self.evalcontext, (6, 1))
+        self.assertIsInstance(move, (list, tuple))
+        self.assertGreater(len(move), 0)
 
     def test_findbestmove_requires_dice_when_no_game(self):
         """Test findbestmove without dice and no game raises ValueError."""

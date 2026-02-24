@@ -28,12 +28,15 @@ extern "C" {
 #include "output.h"       // foutput_to_mem, szMemOutput (for show)
 #include "positionid.h"  // Position ID functions, PositionBearoff, PositionFromBearoff, Combination
 }
-#include <cstdlib>  // std::getenv
+#include <cstdlib>  // std::getenv, setenv (POSIX)
 #include <cerrno>   // errno
 #include <climits>  // INT_MIN (for navigate)
 #include <csignal>  // SIGINT (for command)
 #if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
 #include <dlfcn.h>
+#endif
+#if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__)
+#include <stdlib.h>  // _putenv_s
 #endif
 
 /* -------------------------------------------------------------------------
@@ -2579,9 +2582,62 @@ static bool data_dir_has_weights(const char *dir) {
   return false;
 }
 
+// Compute package data dir from the extension's location so pip-installed package works without env.
+static std::string get_package_data_dir_from_so(void) {
+  auto data_dir_from_base = [](const std::string &base) -> std::string {
+    if (base.size() >= 5 && base.compare(base.size() - 5, 5, "gnubg") == 0 &&
+        (base.size() == 5 || base[base.size() - 6] == '/' || base[base.size() - 6] == '\\'))
+      return base + "/data";
+    return base + "/gnubg/data";
+  };
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
+  Dl_info info;
+  if (dladdr(reinterpret_cast<void *>(&get_package_data_dir_from_so), &info) && info.dli_fname) {
+    std::string path(info.dli_fname);
+    size_t slash = path.find_last_of("/\\");
+    if (slash != std::string::npos) {
+      std::string dir = path.substr(0, slash);
+      return data_dir_from_base(dir);
+    }
+  }
+#elif defined(_WIN32) || defined(WIN32) || defined(__MINGW32__)
+  char path[MAX_PATH];
+  HMODULE hMod = NULL;
+  if (GetModuleHandleExA(
+          GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+          reinterpret_cast<LPCSTR>(&get_package_data_dir_from_so), &hMod) &&
+      hMod && GetModuleFileNameA(hMod, path, sizeof(path))) {
+    std::string s(path);
+    size_t slash = s.find_last_of("/\\");
+    if (slash != std::string::npos) {
+      std::string data_dir = data_dir_from_base(s.substr(0, slash));
+      std::replace(data_dir.begin(), data_dir.end(), '/', '\\');
+      return data_dir;
+    }
+  }
+#endif
+  return std::string();
+}
+
+// Set GNUBG_DATA_DIR to package-relative path when not already set, so data loads "off the bat".
+static void set_gnubg_data_dir_env_if_unset(void) {
+  if (std::getenv("GNUBG_DATA_DIR") != nullptr)
+    return;
+  std::string pkg_data = get_package_data_dir_from_so();
+  if (pkg_data.empty())
+    return;
+#if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__)
+  std::string env = "GNUBG_DATA_DIR=" + pkg_data;
+  _putenv(env.c_str());
+#else
+  setenv("GNUBG_DATA_DIR", pkg_data.c_str(), 1);  // 1 = overwrite (we only call when unset)
+#endif
+}
+
 // Set package data dir: prefer GNUBG_DATA_DIR env (override), then path relative to
 // this shared object so the package is self-contained and no env var is required.
 static void set_pkg_datadir_from_module(void) {
+  set_gnubg_data_dir_env_if_unset();
   auto try_set = [](const std::string &data_dir) -> bool {
     if (data_dir_has_weights(data_dir.c_str())) {
       gnubg_lib_set_pkg_datadir(data_dir.c_str());
@@ -2618,7 +2674,7 @@ static void set_pkg_datadir_from_module(void) {
       }
     }
   }
-#elif defined(_WIN32) || defined(WIN32)
+#elif defined(_WIN32) || defined(WIN32) || defined(__MINGW32__)
   char path[MAX_PATH];
   HMODULE hMod = NULL;
   if (GetModuleHandleExA(
