@@ -216,12 +216,25 @@ gnubg_engine_dep = declare_dependency(link_with : libgnubg).as_link_whole()
 # --- makeweights: converts gnubg.weights (text) to gnubg.wd (binary) for faster load ---
 # link_whole libgnubg pulls in dbprovider (Python); use embed dep so executable links libpython
 python_embed_dep = python3.dependency(embed : true)
+# In cibuildwheel/CI, libpython is in a non-default path (e.g. /opt/_internal/cpython-3.11.14/lib).
+# Tell the linker where to find it so "cannot find -lpython3.11" is avoided.
+py_libdir = run_command(
+    python3,
+    ['-c', 'import sysconfig; d = sysconfig.get_config_var("LIBDIR") or sysconfig.get_config_var("LIBPL"); print(d or "")'],
+    check : false,
+).stdout().strip()
+makeweights_link_args = []
+if py_libdir != ''
+  # -L works on Unix and MinGW; helps cibuildwheel/CI find libpython in /opt/_internal/... or similar
+  makeweights_link_args += ['-L' + py_libdir]
+endif
 makeweights_exe = executable(
     'makeweights',
     'src/gnubg/makeweights.c',
     link_whole : libgnubg,
     include_directories : libgnubg_inc,
     dependencies : [glib_dep, gobject_dep, python_embed_dep, m_dep, sqlite_dep, readline_dep, gmp_dep],
+    link_args : makeweights_link_args,
     install : false,
 )
 gnubg_wd = custom_target(

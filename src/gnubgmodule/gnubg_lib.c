@@ -4382,10 +4382,7 @@ static void init_rng(void);
 static void init_nets(int fNoBearoff) {
   char *gnubg_weights = BuildFilename("gnubg.weights");
   char *gnubg_weights_binary = BuildFilename("gnubg.wd");
-  /* Use binary weights when present (faster load), else fall back to text. */
-  char *binary_to_use = g_file_test(gnubg_weights_binary, G_FILE_TEST_EXISTS)
-                        ? gnubg_weights_binary : NULL;
-  EvalInitialise(gnubg_weights, binary_to_use, fNoBearoff,
+  EvalInitialise(gnubg_weights, gnubg_weights_binary, fNoBearoff,
                  fShowProgress ? BearoffProgress : NULL);
   g_free(gnubg_weights);
   g_free(gnubg_weights_binary);
