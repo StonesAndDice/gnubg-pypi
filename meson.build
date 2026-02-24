@@ -213,6 +213,28 @@ libgnubg = static_library(
 
 gnubg_engine_dep = declare_dependency(link_with : libgnubg).as_link_whole()
 
+# --- makeweights: converts gnubg.weights (text) to gnubg.wd (binary) for faster load ---
+# link_whole libgnubg pulls in dbprovider (Python); use embed dep so executable links libpython
+python_embed_dep = python3.dependency(embed : true)
+makeweights_exe = executable(
+    'makeweights',
+    'src/gnubg/makeweights.c',
+    link_whole : libgnubg,
+    include_directories : libgnubg_inc,
+    dependencies : [glib_dep, gobject_dep, python_embed_dep, m_dep, sqlite_dep, readline_dep, gmp_dep],
+    install : false,
+)
+gnubg_wd = custom_target(
+    'gnubg.wd',
+    output : 'gnubg.wd',
+    input : 'src/gnubgmodule/data/gnubg.weights',
+    command : [makeweights_exe, '-f', '@OUTPUT@', '@INPUT@'],
+    build_by_default : true,
+    install : true,
+    install_dir : join_paths(pkgdir, pkg_name, 'data'),
+    install_tag : 'python-runtime',
+)
+
 # --- Data dir: required for build; installed next to the extension so the package is self-contained ---
 fs = import('fs')
 data_weights = join_paths(meson.project_source_root(), 'src', 'gnubgmodule', 'data', 'gnubg.weights')
@@ -243,10 +265,12 @@ if host_machine.system() == 'windows'
 else
   py_ext_deps += [cc.find_library('dl', required : true)]
 endif
+# Ensure gnubg.wd is built (and thus installed) whenever the extension is built (e.g. pip install)
+gnubg_wd_dep = declare_dependency(sources : gnubg_wd)
 py_ext = python3.extension_module(
     '_gnubg',
     'src/gnubgmodule/gnubgmodule.cpp',
-    dependencies : py_ext_deps,
+    dependencies : [py_ext_deps, gnubg_wd_dep],
     link_with : libgnubg,
     link_whole : libgnubg,
     include_directories : libgnubg_inc,
