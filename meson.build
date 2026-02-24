@@ -216,24 +216,36 @@ gnubg_engine_dep = declare_dependency(link_with : libgnubg).as_link_whole()
 # --- makeweights: converts gnubg.weights (text) to gnubg.wd (binary) for faster load ---
 # link_whole libgnubg pulls in dbprovider (Python); use embed dep so executable links libpython
 python_embed_dep = python3.dependency(embed : true)
-# In cibuildwheel/CI, libpython is in a non-default path (e.g. /opt/_internal/cpython-3.11.14/lib).
-# Tell the linker where to find it so "cannot find -lpython3.11" is avoided.
+# In cibuildwheel/manylinux, libpython is often in LIBPL (e.g. .../lib/python3.10/config-3.10-x86_64-linux-gnu)
+# rather than LIBDIR; add both so the linker finds -lpython3.10.
 py_libdir = run_command(
     python3,
-    ['-c', 'import sysconfig; d = sysconfig.get_config_var("LIBDIR") or sysconfig.get_config_var("LIBPL"); print(d or "")'],
+    ['-c', 'import sysconfig; print(sysconfig.get_config_var("LIBDIR") or "")'],
+    check : false,
+).stdout().strip()
+py_libpl = run_command(
+    python3,
+    ['-c', 'import sysconfig; print(sysconfig.get_config_var("LIBPL") or "")'],
     check : false,
 ).stdout().strip()
 makeweights_link_args = []
 if py_libdir != ''
-  # -L works on Unix and MinGW; helps cibuildwheel/CI find libpython in /opt/_internal/... or similar
   makeweights_link_args += ['-L' + py_libdir]
+endif
+if py_libpl != '' and py_libpl != py_libdir
+  makeweights_link_args += ['-L' + py_libpl]
+endif
+# makeweights links libgnubg (link_whole), which includes sound.c; on Windows that needs winmm (PlaySoundA, waveOutGetNumDevs)
+makeweights_deps = [glib_dep, gobject_dep, python_embed_dep, m_dep, sqlite_dep, readline_dep, gmp_dep]
+if host_machine.system() == 'windows'
+  makeweights_deps += winmm_dep
 endif
 makeweights_exe = executable(
     'makeweights',
     'src/gnubg/makeweights.c',
     link_whole : libgnubg,
     include_directories : libgnubg_inc,
-    dependencies : [glib_dep, gobject_dep, python_embed_dep, m_dep, sqlite_dep, readline_dep, gmp_dep],
+    dependencies : makeweights_deps,
     link_args : makeweights_link_args,
     install : false,
 )
