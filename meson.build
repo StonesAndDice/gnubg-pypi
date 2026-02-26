@@ -213,33 +213,59 @@ libgnubg = static_library(
 
 gnubg_engine_dep = declare_dependency(link_with : libgnubg).as_link_whole()
 
-# --- makeweights: converts gnubg.weights (text) to gnubg.wd (binary) for faster load ---
-# This automatically finds the correct libs/paths for the current Python ABI
-python_embed_dep = python3.dependency(embed: true)
+# --- gnubg.wd: binary weights for faster load (built by makeweights or use prebuilt) ---
+# Manylinux/cibuildwheel images do not ship a shared libpython, so linking makeweights fails.
+# If src/gnubgmodule/data/gnubg.wd exists (pre-built), use it and skip building makeweights.
+fs = import('fs')
+prebuilt_gnubg_wd = join_paths(meson.project_source_root(), 'src', 'gnubgmodule', 'data', 'gnubg.wd')
+use_prebuilt_gnubg_wd = fs.exists(prebuilt_gnubg_wd)
 
-makeweights_deps = [
-    glib_dep, 
-    gobject_dep, 
-    python_embed_dep, 
-    m_dep, 
-    sqlite_dep, 
-    readline_dep, 
-    gmp_dep
-]
-
-if host_machine.system() == 'windows'
-  makeweights_deps += winmm_dep
-endif
-
-makeweights_exe = executable(
+if use_prebuilt_gnubg_wd
+  gnubg_wd = custom_target(
+    'gnubg.wd',
+    output : 'gnubg.wd',
+    input : [],
+    command : [python3, '-c', 'import shutil, sys; shutil.copy(sys.argv[1], sys.argv[2])', prebuilt_gnubg_wd, '@OUTPUT@'],
+    build_by_default : true,
+    install : true,
+    install_dir : join_paths(pkgdir, pkg_name, 'data'),
+    install_tag : 'python-runtime',
+  )
+else
+  # link_whole libgnubg pulls in dbprovider (Python); use embed dep so executable links libpython
+  python_embed_dep = python3.dependency(embed : true)
+  # In cibuildwheel/manylinux, libpython is often in LIBPL; add both LIBDIR and LIBPL so the linker finds -lpython3.x
+  py_libdir = run_command(
+    python3,
+    ['-c', 'import sysconfig; print(sysconfig.get_config_var("LIBDIR") or "")'],
+    check : false,
+  ).stdout().strip()
+  py_libpl = run_command(
+    python3,
+    ['-c', 'import sysconfig; print(sysconfig.get_config_var("LIBPL") or "")'],
+    check : false,
+  ).stdout().strip()
+  makeweights_link_args = []
+  if py_libdir != ''
+    makeweights_link_args += ['-L' + py_libdir]
+  endif
+  if py_libpl != '' and py_libpl != py_libdir
+    makeweights_link_args += ['-L' + py_libpl]
+  endif
+  makeweights_deps = [glib_dep, gobject_dep, python_embed_dep, m_dep, sqlite_dep, readline_dep, gmp_dep]
+  if host_machine.system() == 'windows'
+    makeweights_deps += winmm_dep
+  endif
+  makeweights_exe = executable(
     'makeweights',
     'src/gnubg/makeweights.c',
     link_whole : libgnubg,
     include_directories : libgnubg_inc,
     dependencies : makeweights_deps,
+    link_args : makeweights_link_args,
     install : false,
-)
-gnubg_wd = custom_target(
+  )
+  gnubg_wd = custom_target(
     'gnubg.wd',
     output : 'gnubg.wd',
     input : 'src/gnubgmodule/data/gnubg.weights',
@@ -248,10 +274,10 @@ gnubg_wd = custom_target(
     install : true,
     install_dir : join_paths(pkgdir, pkg_name, 'data'),
     install_tag : 'python-runtime',
-)
+  )
+endif
 
 # --- Data dir: required for build; installed next to the extension so the package is self-contained ---
-fs = import('fs')
 data_weights = join_paths(meson.project_source_root(), 'src', 'gnubgmodule', 'data', 'gnubg.weights')
 if not fs.exists(data_weights)
   error('Data dir is required: gnubg.weights not found at src/gnubgmodule/data/gnubg.weights. The package loads data from the directory next to the compiled extension (no environment variable needed).')
