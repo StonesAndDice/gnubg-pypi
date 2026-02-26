@@ -98,6 +98,9 @@ runs:
         CIBW_TEST_COMMAND: "pytest {project}/tests"
         # Match Homebrew dylibs (min 14.0) so delocate accepts the wheel
         MACOSX_DEPLOYMENT_TARGET: "14.0"
+        CIBW_ENVIRONMENT_LINUX: >
+          LDFLAGS="-L$(python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))') $LDFLAGS"
+          CPPFLAGS="-I$(python -c 'import sysconfig; print(sysconfig.get_path("include"))') $CPPFLAGS"
       run: cibuildwheel --output-dir wheelhouse
 
     - name: Install Meson

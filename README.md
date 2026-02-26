@@ -1,7 +1,7 @@
 <h1 align="center">
 <img src="https://raw.githubusercontent.com/StonesAndDice/gnubg-pypi/refs/heads/main/img/banner.png">
 
-GNUBG
+GNU Backgammon (GNUBG)
 </h1>
 
 [![PyPI Downloads](https://img.shields.io/pypi/dm/gnubg.svg?label=PyPI%20downloads)](https://pypi.org/project/gnubg/)
@@ -10,7 +10,7 @@ GNUBG
 [![License](https://img.shields.io/badge/license-GPL%20v2-blue.svg)](#license)
 [![Stack Overflow](https://img.shields.io/badge/stackoverflow-Ask%20questions-blue.svg)](https://stackoverflow.com/questions/tagged/gnubg)
 
-GNUBG Python bindings bring the powerful GNUBG backgammon engine to Python 3.
+GNU Backgammon Python bindings bring the powerful GNUBG engine to Python 3.
 
 ## Quick Start
 
