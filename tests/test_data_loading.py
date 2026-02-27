@@ -85,10 +85,8 @@ class TestWheelDataAssets(unittest.TestCase):
         "gnubg_ts0.bd",
         "gnubg_os0.bd",
         "gnubg_os.db",
+        "gnubg.wd",  # Must be built and included in wheel (custom_target + install_tag python-runtime)
     ]
-
-    # At least one of these must exist (gnubg.wd is built at wheel build time)
-    NEURALNET_WEIGHTS = ("gnubg.wd", "gnubg.weights")
 
     # Subdir installed by install_subdir (e.g. met/)
     REQUIRED_DATA_SUBDIRS = [
@@ -118,19 +116,17 @@ class TestWheelDataAssets(unittest.TestCase):
             f"Required data files missing from package: {missing} (data_dir={data_dir})",
         )
 
-    def test_neuralnet_weights_in_wheel(self):
-        """Either gnubg.wd or gnubg.weights is present (neural net can load)."""
+    def test_gnubg_wd_built_and_in_wheel(self):
+        """gnubg.wd is built at wheel build time and included in the package."""
         data_dir = _gnubg_data_dir()
         self.assertTrue(os.path.isdir(data_dir), f"Data dir missing: {data_dir}")
-        found = [
-            name
-            for name in self.NEURALNET_WEIGHTS
-            if os.path.isfile(os.path.join(data_dir, name))
-        ]
+        gnubg_wd_path = os.path.join(data_dir, "gnubg.wd")
         self.assertTrue(
-            len(found) >= 1,
-            f"At least one of {self.NEURALNET_WEIGHTS} must exist in {data_dir}",
+            os.path.isfile(gnubg_wd_path),
+            f"gnubg.wd must be built and included in the wheel: {gnubg_wd_path}",
         )
+        size = os.path.getsize(gnubg_wd_path)
+        self.assertGreater(size, 0, "gnubg.wd must be non-empty (built weights file)")
 
     def test_required_data_subdirs_in_wheel(self):
         """Required data subdir files (e.g. met/) are present in the wheel."""
