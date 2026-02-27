@@ -26,6 +26,10 @@ GNUBG = "https://git.savannah.gnu.org/cgit/gnubg/gnubg.git"
 MailingList = "https://lists.gnu.org/mailman/listinfo/gnubg"
 Credits = "https://git.savannah.gnu.org/cgit/gnubg.git/tree/credits.sh"
 
+[tool.meson-python.args]
+# Include python-runtime so custom_target outputs (e.g. gnubg.wd) are installed into the wheel
+install = ["--tags=runtime,python-runtime"]
+
 [tool.meson-python.wheel]
 # Ensure generated gnubg.wd is included (custom_target install can be missed by wheel layout)
 include = ["gnubg/data/gnubg.wd"]
