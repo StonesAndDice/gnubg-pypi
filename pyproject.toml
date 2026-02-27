@@ -8,7 +8,7 @@ build-backend = "mesonpy"
 
 [project]
 name = "gnubg"
-version = "1.1.0a13"
+version = "1.1.0a14"
 description = "Python3 bindings for GNUBG"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,10 +25,6 @@ Source = "https://github.com/StonesAndDice/gnubg-pypi"
 GNUBG = "https://git.savannah.gnu.org/cgit/gnubg/gnubg.git"
 MailingList = "https://lists.gnu.org/mailman/listinfo/gnubg"
 Credits = "https://git.savannah.gnu.org/cgit/gnubg.git/tree/credits.sh"
-
-[tool.meson-python.args]
-# Include python-runtime so custom_target outputs (e.g. gnubg.wd) are installed into the wheel
-install = ["--tags=runtime,python-runtime"]
 
 [tool.meson-python.wheel]
 # Ensure generated gnubg.wd is included (custom_target install can be missed by wheel layout)
