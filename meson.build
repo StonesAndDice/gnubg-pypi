@@ -49,6 +49,7 @@ install_data(
     'src/gnubgmodule/data/gnubg_ts0.bd',
     'src/gnubgmodule/data/gnubg_os0.bd',
     'src/gnubgmodule/data/gnubg_os.db',
+    'src/gnubgmodule/data/gnubg.wd',
     install_dir: join_paths(pkgdir, pkg_name, 'data')
 )
 

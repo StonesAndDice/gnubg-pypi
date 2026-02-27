@@ -8,6 +8,20 @@ import subprocess
 import sys
 import unittest
 
+try:
+    import gnubg
+    _gnubg_available = True
+except ImportError:
+    _gnubg_available = False
+
+
+def _gnubg_data_dir():
+    """Return the path to the gnubg package data directory (same layout as in the wheel)."""
+    import gnubg
+    # Package root is the dir containing __init__.py; data is in data/ next to it
+    pkg_root = os.path.dirname(os.path.abspath(gnubg.__file__))
+    return os.path.join(pkg_root, "data")
+
 
 class TestDataLoadingWithoutEnv(unittest.TestCase):
     """Import and data loading work without GNUBG_DATA_DIR set."""
@@ -55,6 +69,79 @@ class TestDataLoadingWithoutEnv(unittest.TestCase):
         move = gnubg.findbestmove(board, cubeinfo, ec, (6, 1))
         self.assertIsInstance(move, (list, tuple), "findbestmove should return a move tuple")
         self.assertGreater(len(move), 0)
+
+
+@unittest.skipUnless(_gnubg_available, "gnubg not installed (install wheel to run wheel data asset tests)")
+class TestWheelDataAssets(unittest.TestCase):
+    """
+    Assert that the data assets required by the package are present in the
+    installed package (e.g. wheel). If the wheel is built without these files,
+    these tests fail.
+    """
+
+    # Required data files installed by meson (install_data + custom_target gnubg.wd)
+    REQUIRED_DATA_FILES = [
+        "gnubg.weights",
+        "gnubg_ts0.bd",
+        "gnubg_os0.bd",
+        "gnubg_os.db",
+        "gnubg.wd",  # Must be built and included in wheel (custom_target + install_tag python-runtime)
+    ]
+
+    # Subdir installed by install_subdir (e.g. met/)
+    REQUIRED_DATA_SUBDIRS = [
+        os.path.join("met", "Kazaross-XG2.xml"),
+    ]
+
+    def test_data_dir_exists(self):
+        """Package data directory exists next to the installed package."""
+        data_dir = _gnubg_data_dir()
+        self.assertTrue(
+            os.path.isdir(data_dir),
+            f"Package data directory should exist: {data_dir}",
+        )
+
+    def test_required_data_files_in_wheel(self):
+        """All required data files are present in the installed package (wheel)."""
+        data_dir = _gnubg_data_dir()
+        self.assertTrue(os.path.isdir(data_dir), f"Data dir missing: {data_dir}")
+        missing = []
+        for name in self.REQUIRED_DATA_FILES:
+            path = os.path.join(data_dir, name)
+            if not os.path.isfile(path):
+                missing.append(name)
+        self.assertEqual(
+            missing,
+            [],
+            f"Required data files missing from package: {missing} (data_dir={data_dir})",
+        )
+
+    def test_gnubg_wd_built_and_in_wheel(self):
+        """gnubg.wd is built at wheel build time and included in the package."""
+        data_dir = _gnubg_data_dir()
+        self.assertTrue(os.path.isdir(data_dir), f"Data dir missing: {data_dir}")
+        gnubg_wd_path = os.path.join(data_dir, "gnubg.wd")
+        self.assertTrue(
+            os.path.isfile(gnubg_wd_path),
+            f"gnubg.wd must be built and included in the wheel: {gnubg_wd_path}",
+        )
+        size = os.path.getsize(gnubg_wd_path)
+        self.assertGreater(size, 0, "gnubg.wd must be non-empty (built weights file)")
+
+    def test_required_data_subdirs_in_wheel(self):
+        """Required data subdir files (e.g. met/) are present in the wheel."""
+        data_dir = _gnubg_data_dir()
+        self.assertTrue(os.path.isdir(data_dir), f"Data dir missing: {data_dir}")
+        missing = []
+        for rel_path in self.REQUIRED_DATA_SUBDIRS:
+            path = os.path.join(data_dir, rel_path)
+            if not os.path.isfile(path):
+                missing.append(rel_path)
+        self.assertEqual(
+            missing,
+            [],
+            f"Required data subdir files missing: {missing} (data_dir={data_dir})",
+        )
 
 
 if __name__ == "__main__":
