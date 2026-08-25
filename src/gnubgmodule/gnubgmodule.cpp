@@ -1171,7 +1171,7 @@ static PyObject *PythonFindBestMoves(PyObject *self, PyObject *args) {
     return NULL;
 
   if (FindnSaveBestMoves(&ml, anDice[0], anDice[1], (ConstTanBoard)anBoard,
-                        NULL, 0.0f, &ci, &ec, aamf) < 0) {
+                        NULL, FALSE, 0.0f, &ci, &ec, aamf) < 0) {
     PyErr_SetString(PyExc_RuntimeError, "FindnSaveBestMoves failed");
     return NULL;
   }

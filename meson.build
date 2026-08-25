@@ -94,6 +94,7 @@ conf_data.set('HAVE_LIB_READLINE', 1)
 
 # Package & Paths
 conf_data.set_quoted('PACKAGE', 'gnubg')
+conf_data.set_quoted('PACKAGE_BUGREPORT', 'bug-gnubg@gnu.org')
 conf_data.set_quoted('LOCALEDIR', join_paths(get_option('prefix'), get_option('localedir')))
 conf_data.set_quoted('AC_DATADIR', join_paths(get_option('prefix'), get_option('datadir')))
 conf_data.set_quoted('AC_PKGDATADIR', join_paths(get_option('prefix'), get_option('datadir'), 'gnubg'))

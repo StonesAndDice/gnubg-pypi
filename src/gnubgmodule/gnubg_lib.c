@@ -4422,7 +4422,7 @@ void gnubg_lib_init_for_python(void) {
     g_free(met);
   }
   init_nets(0);
-  glib_ext_init();
+  g_type_init();
   MT_InitThreads();
 }
 
@@ -4740,7 +4740,7 @@ int gnubg_lib_unused_main(int argc, char *argv[]) {
   init_nets(fNoBearoff);
 
   PushSplash(pwSplash, _("Initialising"), _("initialising thread data"));
-  glib_ext_init();
+  g_type_init();
   MT_InitThreads();
 
 #if defined(WIN32) && defined(HAVE_SOCKETS)
@@ -5431,7 +5431,7 @@ char *SetupLanguage(const char *newLangCode) {
 
 void asyncFindBestMoves(findData *pfd) {
   if (FindnSaveBestMoves(pfd->pml, pfd->anDice[0], pfd->anDice[1], pfd->pboard,
-                         pfd->keyMove, pfd->rThr, pfd->pci, pfd->pec,
+                         pfd->keyMove, pfd->fAnalyse, pfd->rThr, pfd->pci, pfd->pec,
                          pfd->aamf) < 0)
     MT_SetResultFailed();
 
@@ -5440,7 +5440,7 @@ void asyncFindBestMoves(findData *pfd) {
 
 void asyncFindMove(findData *pfd) {
   if (FindnSaveBestMoves(pfd->pml, ms.anDice[0], ms.anDice[1], pfd->pboard,
-                         pfd->keyMove, pfd->rThr, pfd->pci, pfd->pec,
+                         pfd->keyMove, pfd->fAnalyse, pfd->rThr, pfd->pci, pfd->pec,
                          pfd->aamf) < 0)
     MT_SetResultFailed();
 }
