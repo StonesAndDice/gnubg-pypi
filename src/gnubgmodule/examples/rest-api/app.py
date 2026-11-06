@@ -223,7 +223,9 @@ def evaluate():
     """
     Request JSON: position_id (str) or board (2x25), and optional cube/match fields:
     cube (int), cube_owner (C|X|O), side_to_move (O|X), match_to (int), score (list of 2 ints), crawford (0|1).
-    Response: win, win_gammon, win_backgammon, lose_gammon, lose_backgammon, equity (cubeful).
+    Response: win, win_gammon, win_backgammon, lose_gammon, lose_backgammon,
+    equity (cubeless, from gnubg.evaluate) and, when the evaluation is cubeful,
+    cubeful_equity and cube (from gnubg.cfevaluate).
     """
     ok, err = ensure_engine()
     if not ok:
@@ -234,14 +236,27 @@ def evaluate():
         cubeinfo = parse_cube(body)
         ec = parse_evalcontext(body)
         out = gnubg.evaluate(board, cubeinfo, ec)
-        return jsonify({
+        result = {
             "win": out[0],
             "win_gammon": out[1],
             "win_backgammon": out[2],
             "lose_gammon": out[3],
             "lose_backgammon": out[4],
             "equity": out[5],
-        })
+        }
+        if ec["cubeful"]:
+            optimal, no_double, double_take, double_pass, code, text = gnubg.cfevaluate(
+                board, cubeinfo, ec
+            )
+            result["cubeful_equity"] = optimal
+            result["cube"] = {
+                "no_double": no_double,
+                "double_take": double_take,
+                "double_pass": double_pass,
+                "decision": code,
+                "recommendation": text,
+            }
+        return jsonify(result)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:

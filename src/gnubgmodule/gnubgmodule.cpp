@@ -1060,6 +1060,64 @@ static PyObject *PythonEvaluate(PyObject *self, PyObject *args) {
 }
 
 /*
+ * Ported from gnubgmodule.c: PythonEvaluateCubeful
+ * Exposed as: gnubg.cfevaluate([board], [cubeinfo], [evalcontext])
+ * Cubeful evaluation and cube decision for the player on roll. Returns
+ * (optimal, no double, double/take, double/pass, cubedecision, text): the
+ * cubeful equities (normalised to the current cube), gnubg's cubedecision
+ * code and its recommendation, e.g. "Double, take". The evaluation context
+ * defaults to the "set evaluation cubedecision" settings.
+ */
+static PyObject *PythonEvaluateCubeful(PyObject *self, PyObject *args) {
+  PyObject *pyBoard = NULL;
+  PyObject *pyCubeInfo = NULL;
+  PyObject *pyEvalContext = NULL;
+  TanBoard anBoard;
+  cubeinfo ci;
+  evalcontext ec;
+  float aarOutput[2][NUM_ROLLOUT_OUTPUTS];
+  float arCube[NUM_CUBEFUL_OUTPUTS];
+  cubedecision cd;
+
+  (void)self;
+  memcpy(anBoard, msBoard(), sizeof(TanBoard));
+  if (ms.gs != GAME_NONE) {
+    GetMatchStateCubeInfo(&ci, &ms);
+  } else {
+    /* no game yet: a money session with the cube centred */
+    int anScore[2] = {0, 0};
+    SetCubeInfo(&ci, 1, -1, 0, 0, anScore, FALSE, fJacoby, FALSE,
+                VARIATION_STANDARD);
+  }
+  memcpy(&ec, &GetEvalCube()->ec, sizeof(evalcontext));
+
+  if (!PyArg_ParseTuple(args, "|OOO:cfevaluate", &pyBoard, &pyCubeInfo,
+                        &pyEvalContext))
+    return NULL;
+
+  if (pyBoard && !PyToBoard(pyBoard, anBoard)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid board format");
+    return NULL;
+  }
+  if (pyCubeInfo && PyToCubeInfo(pyCubeInfo, &ci) != 0)
+    return NULL;
+  if (pyEvalContext && PyToEvalContext(pyEvalContext, &ec) != 0)
+    return NULL;
+
+  if (GeneralCubeDecisionE(aarOutput, (ConstTanBoard)anBoard, &ci, &ec, NULL) <
+      0) {
+    PyErr_SetString(PyExc_RuntimeError, "GeneralCubeDecisionE failed");
+    return NULL;
+  }
+  cd = FindCubeDecision(arCube, aarOutput, &ci);
+
+  return Py_BuildValue("(ffffis)", (double)arCube[OUTPUT_OPTIMAL],
+                       (double)arCube[OUTPUT_NODOUBLE],
+                       (double)arCube[OUTPUT_TAKE], (double)arCube[OUTPUT_DROP],
+                       (int)cd, GetCubeRecommendation(cd));
+}
+
+/*
  * Exposed as: gnubg.findbestmove([board], [cubeinfo], [evalcontext], [dice],
  * [movefilters]) Find best move for the given dice; returns tuple of (from, to,
  * ...) 1-based, or empty tuple if no move.
@@ -2420,10 +2478,18 @@ static PyMethodDef GnubgMethods[] = {
      "    returns: evalcontext dictionary"},
 
     {"evaluate", PythonEvaluate, METH_VARARGS,
-     "Evaluate position (win/gammon/backgammon probs and equity)\n"
+     "Evaluate position (win/gammon/backgammon probs and cubeless equity)\n"
      "    arguments: [board], [cubeinfo], [evalcontext] (all optional)\n"
      "    returns: tuple of 6 floats (win, wingammon, winbackgammon, "
-     "losegammon, losebackgammon, equity)"},
+     "losegammon, losebackgammon, cubeless equity); for cubeful equities "
+     "use cfevaluate"},
+
+    {"cfevaluate", PythonEvaluateCubeful, METH_VARARGS,
+     "Cubeful evaluation and cube decision for the player on roll\n"
+     "    arguments: [board], [cubeinfo], [evalcontext] (all optional; the "
+     "context defaults to the cube decision settings)\n"
+     "    returns: tuple (optimal, no double, double/take, double/pass, "
+     "cubedecision code, recommendation text)"},
 
     {"rolloutcontext", PythonRolloutContext, METH_VARARGS,
      "Make a rolloutcontext dictionary\n"

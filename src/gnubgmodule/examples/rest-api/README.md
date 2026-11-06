@@ -89,7 +89,7 @@ Move format is a list of `[from_point, to_point]` pairs (1-based board points).
 
 ### `POST /evaluate`
 
-Returns position evaluation: win/gammon/backgammon probabilities and cubeful equity.
+Returns position evaluation: win/gammon/backgammon probabilities, the cubeless equity and, when the evaluation is cubeful (the default), the cubeful equity and cube decision.
 
 **Request body (JSON):**
 
@@ -122,11 +122,19 @@ curl -X POST http://127.0.0.1:5000/evaluate \
   "win_backgammon": 0.01,
   "lose_gammon": 0.10,
   "lose_backgammon": 0.01,
-  "equity": 0.048
+  "equity": 0.076,
+  "cubeful_equity": 0.098,
+  "cube": {
+    "no_double": 0.098,
+    "double_take": -0.171,
+    "double_pass": 1.0,
+    "decision": 2,
+    "recommendation": "No double, take"
+  }
 }
 ```
 
-Equity is from the perspective of the side to move (cubeful when applicable).
+All equities are from the perspective of the side to move. `equity` is the cubeless equity (`gnubg.evaluate`). `cubeful_equity` (the equity after the best cube action) and `cube` (normalised to the current cube; `decision` is gnubg's `cubedecision` code) come from `gnubg.cfevaluate` and appear only when the evaluation is cubeful.
 
 ## License
 
