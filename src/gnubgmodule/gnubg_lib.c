@@ -4427,6 +4427,10 @@ void gnubg_lib_init_for_python(void) {
   init_nets(0);
   g_type_init();
   MT_InitThreads();
+  /* MT_InitThreads() leaves no calculation thread; like main() after the
+   * rc file, start one, or every RunAsyncProcess() (the computer's move in
+   * "new session", hint, ...) waits forever. "set threads n" changes it. */
+  MT_StartThreads();
 }
 
 extern int GetManualDice(unsigned int anDice[2]) {
