@@ -171,12 +171,27 @@ static int PyToMove(PyObject *p, signed int anMove[8]) {
     /* If we have found more items than the maximum */
     if (anIndex >= 8 && j < tuplelen)
       return 0;
+    /* A flat tuple must hold whole (from, to) pairs */
+    if (anIndex % 2)
+      return 0;
 
     return 1;
   } else {
     /* No tuples equivalent to no legal moves */
     return 1;
   }
+}
+
+/*
+ * Number of entries in use in a gnubg move (anMove: up to four 0-based
+ * (from, to) pairs). The move ends at the first pair whose "from" is -1;
+ * a "to" of -1 is a bear-off (0 once made 1-based), not the end.
+ */
+static Py_ssize_t MoveLength(const int anMove[8]) {
+  Py_ssize_t n = 0;
+  while (n < 8 && anMove[n] >= 0)
+    n += 2;
+  return n;
 }
 
 /*
@@ -1104,9 +1119,7 @@ static PyObject *PythonFindBestMove(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  Py_ssize_t n = 0;
-  while (n < 8 && anMove[n] >= 0)
-    n++;
+  Py_ssize_t n = MoveLength(anMove);
   PyObject *p = PyTuple_New(n);
   if (!p)
     return NULL;
@@ -1183,7 +1196,8 @@ static PyObject *PythonFindBestMoves(PyObject *self, PyObject *args) {
   for (unsigned int i = 0; i < ml.cMoves; i++) {
     const move *pm = &ml.amMoves[i];
     std::vector<long> m;
-    for (int k = 0; k < 8 && pm->anMove[k] >= 0; k++)
+    const Py_ssize_t len = MoveLength(pm->anMove);
+    for (Py_ssize_t k = 0; k < len; k++)
       m.push_back(pm->anMove[k] + 1);
     scored.push_back(std::make_pair(pm->rScore, std::move(m)));
   }
@@ -2444,7 +2458,8 @@ static PyMethodDef GnubgMethods[] = {
      "Find best move for position and dice\n"
      "    arguments: [board], [cubeinfo], [evalcontext], [dice], [movefilters] "
      "(dice required if no game)\n"
-     "    returns: tuple of (from, to) pairs, 1-based"},
+     "    returns: flat tuple (from, to, from, to, ...), 1-based: 25 = bar, "
+     "0 = off; () if there is no legal move"},
 
     {"findbestmoves", PythonFindBestMoves, METH_VARARGS,
      "Find all legal moves for position and dice, ordered by score (best "
