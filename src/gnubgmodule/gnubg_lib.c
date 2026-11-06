@@ -42,7 +42,8 @@
 #endif
 #include "multithread.h"
 
-/* Thread data is defined in mtsupport.c (linked when building with mtsupport). */
+/* Thread data is defined in mtsupport.c (linked when building with mtsupport).
+ */
 extern ThreadData td;
 
 #include "glib-ext.h"
@@ -4388,7 +4389,8 @@ static void init_nets(int fNoBearoff) {
   g_free(gnubg_weights_binary);
 }
 
-/* Set package data dir so BuildFilename finds weights/bearoff. Uses gnubg/util.h globals. */
+/* Set package data dir so BuildFilename finds weights/bearoff. Uses
+ * gnubg/util.h globals. */
 void gnubg_lib_set_pkg_datadir(const char *path) {
   if (path) {
     if (pkg_datadir)
@@ -4401,7 +4403,8 @@ void gnubg_lib_set_pkg_datadir(const char *path) {
 }
 
 /* Minimal init for standalone Python module use (e.g. REST API).
- * Ensures neural nets and match equity are loaded so evaluate/findbestmove work. */
+ * Ensures neural nets and match equity are loaded so evaluate/findbestmove
+ * work. */
 void gnubg_lib_init_for_python(void) {
   static int done = 0;
   if (done)
@@ -5431,8 +5434,8 @@ char *SetupLanguage(const char *newLangCode) {
 
 void asyncFindBestMoves(findData *pfd) {
   if (FindnSaveBestMoves(pfd->pml, pfd->anDice[0], pfd->anDice[1], pfd->pboard,
-                         pfd->keyMove, pfd->fAnalyse, pfd->rThr, pfd->pci, pfd->pec,
-                         pfd->aamf) < 0)
+                         pfd->keyMove, pfd->fAnalyse, pfd->rThr, pfd->pci,
+                         pfd->pec, pfd->aamf) < 0)
     MT_SetResultFailed();
 
   RefreshMoveList(pfd->pml, NULL);
@@ -5440,8 +5443,8 @@ void asyncFindBestMoves(findData *pfd) {
 
 void asyncFindMove(findData *pfd) {
   if (FindnSaveBestMoves(pfd->pml, ms.anDice[0], ms.anDice[1], pfd->pboard,
-                         pfd->keyMove, pfd->fAnalyse, pfd->rThr, pfd->pci, pfd->pec,
-                         pfd->aamf) < 0)
+                         pfd->keyMove, pfd->fAnalyse, pfd->rThr, pfd->pci,
+                         pfd->pec, pfd->aamf) < 0)
     MT_SetResultFailed();
 }
 
