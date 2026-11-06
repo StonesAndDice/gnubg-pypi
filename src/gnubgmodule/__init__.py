@@ -29,6 +29,7 @@ parse_move = _gnubg_ext.parsemove
 move_tuple_to_string = _gnubg_ext.movetupletostring
 find_best_move = _gnubg_ext.findbestmove
 find_best_moves = _gnubg_ext.findbestmoves
+cf_evaluate = _gnubg_ext.cfevaluate
 match_id = _gnubg_ext.matchid
 gnubg_id = _gnubg_ext.gnubgid
 dice_rolls = _gnubg_ext.dicerolls

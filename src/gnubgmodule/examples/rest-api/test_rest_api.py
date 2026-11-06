@@ -48,6 +48,10 @@ def test_evaluate(client):
     assert "equity" in data
     assert 0 <= data["win"] <= 1
     assert isinstance(data["equity"], (int, float))
+    # cubeful by default: the cube analysis from gnubg.cfevaluate
+    assert isinstance(data["cubeful_equity"], (int, float))
+    assert data["cube"]["recommendation"] == "No double, take"
+    assert data["cubeful_equity"] == data["cube"]["no_double"]
 
 
 def test_best_move(client):
@@ -155,6 +159,7 @@ def test_evaluate_with_evaluation_options(client):
     assert "win" in data
     assert "equity" in data
     assert 0 <= data["win"] <= 1
+    assert "cube" not in data  # cubeless: no cube analysis
 
 
 def test_evaluate_with_top_level_plies(client):
