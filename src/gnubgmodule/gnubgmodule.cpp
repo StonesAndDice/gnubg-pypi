@@ -806,10 +806,15 @@ static PyObject *PythonPositionFromKey(PyObject *self, PyObject *args) {
 
 /*
  * Ported from gnubgmodule.c: PythonCubeInfo
- * Exposed as: gnubg.cubeinfo(...)
- * Creates a cube info dictionary.
+ * Exposed as: gnubg.cubeinfo([cube], [cubeowner], [move], [matchto], [score],
+ *                            [crawford], [bgv], [jacoby], [beavers])
+ * Creates a cube info dictionary. Also takes the same names as keywords.
  */
-static PyObject *PythonCubeInfo(PyObject *self, PyObject *args) {
+static PyObject *PythonCubeInfo(PyObject *self, PyObject *args,
+                                PyObject *kwargs) {
+  static const char *kwlist[] = {"cube",    "cubeowner", "move", "matchto",
+                                 "score",   "crawford",  "bgv",  "jacoby",
+                                 "beavers", NULL};
   cubeinfo ci;
   // Default values for money game when no arguments provided
   int nCube = 1;
@@ -818,9 +823,10 @@ static PyObject *PythonCubeInfo(PyObject *self, PyObject *args) {
   int nMatchTo = 0;     // Money game
   int anScore[2] = {0, 0};
   int fCrawford = 0;
-  int fJacobyRule = 1;  // Jacoby rule enabled by default
+  // The Jacoby rule as currently set ("set jacoby on|off", or the game's)
+  int fJacobyRule = (ms.gs != GAME_NONE) ? ms.fJacoby : fJacoby;
   int fBeavers = 0;
-  bgvariation bgv = VARIATION_STANDARD;
+  int bgv = VARIATION_STANDARD;
 
   // Use matchstate values if available and valid, otherwise use defaults
   if (ms.fMove >= 0 && ms.fMove <= 1) {
@@ -842,13 +848,20 @@ static PyObject *PythonCubeInfo(PyObject *self, PyObject *args) {
     bgv = ms.bgv;
   }
 
-  if (!PyArg_ParseTuple(args, "|iiii(ii)iiii:cubeinfo", &nCube, &fCubeOwner,
-                        &fMove, &nMatchTo, &anScore[0], &anScore[1], &fCrawford,
-                        &bgv))
+  // One output pointer per format unit ("(ii)" takes two)
+  if (!PyArg_ParseTupleAndKeywords(
+          args, kwargs, "|iiii(ii)iiii:cubeinfo", const_cast<char **>(kwlist),
+          &nCube, &fCubeOwner, &fMove, &nMatchTo, &anScore[0], &anScore[1],
+          &fCrawford, &bgv, &fJacobyRule, &fBeavers))
     return NULL;
 
+  if (bgv < VARIATION_STANDARD || bgv >= NUM_VARIATIONS) {
+    PyErr_SetString(PyExc_ValueError, "invalid bgv (backgammon variation)");
+    return NULL;
+  }
+
   if (SetCubeInfo(&ci, nCube, fCubeOwner, fMove, nMatchTo, anScore, fCrawford,
-                  fJacobyRule, fBeavers, bgv)) {
+                  fJacobyRule ? 1 : 0, fBeavers ? 1 : 0, (bgvariation)bgv)) {
     PyErr_SetString(PyExc_RuntimeError, "Error in SetCubeInfo");
     return NULL;
   }
@@ -2460,10 +2473,15 @@ static PyMethodDef GnubgMethods[] = {
      "    arguments: [list/tuple of 10 ints] (optional)\n"
      "    returns: board (tuple of two tuples of 25 ints)"},
 
-    {"cubeinfo", PythonCubeInfo, METH_VARARGS,
+    {"cubeinfo", (PyCFunction)(PyCFunctionWithKeywords)PythonCubeInfo,
+     METH_VARARGS | METH_KEYWORDS,
      "Make a cubeinfo dictionary\n"
      "    arguments: [cube value, cube owner, player on move, match length,\n"
-     "                score tuple, crawford flag, bgv]\n"
+     "                score tuple, crawford flag, bgv, jacoby, beavers]\n"
+     "               or the keywords cube, cubeowner, move, matchto, score,\n"
+     "               crawford, bgv, jacoby, beavers\n"
+     "    jacoby defaults to the current setting (set jacoby on|off),\n"
+     "    beavers to 0\n"
      "    returns: cubeinfo dictionary"},
 
     {"posinfo", PythonPosInfo, METH_VARARGS,
