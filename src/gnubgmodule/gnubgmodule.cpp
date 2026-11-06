@@ -28,10 +28,10 @@ extern "C" {
 #include "output.h"       // foutput_to_mem, szMemOutput (for show)
 #include "positionid.h"  // Position ID functions, PositionBearoff, PositionFromBearoff, Combination
 }
-#include <cstdlib>  // std::getenv, setenv (POSIX)
 #include <cerrno>   // errno
 #include <climits>  // INT_MIN (for navigate)
 #include <csignal>  // SIGINT (for command)
+#include <cstdlib>  // std::getenv, setenv (POSIX)
 #if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
 #include <dlfcn.h>
 #endif
@@ -1117,8 +1117,9 @@ static PyObject *PythonFindBestMove(PyObject *self, PyObject *args) {
 
 /*
  * Exposed as: gnubg.findbestmoves(...)
- * Same args as findbestmove. Returns list of dicts {"move": [(from,to),...], "score": float},
- * ordered by score descending (best first). Best move is moves[0]["move"].
+ * Same args as findbestmove. Returns list of dicts {"move": [(from,to),...],
+ * "score": float}, ordered by score descending (best first). Best move is
+ * moves[0]["move"].
  */
 static PyObject *PythonFindBestMoves(PyObject *self, PyObject *args) {
   PyObject *pyBoard = NULL;
@@ -1171,7 +1172,7 @@ static PyObject *PythonFindBestMoves(PyObject *self, PyObject *args) {
     return NULL;
 
   if (FindnSaveBestMoves(&ml, anDice[0], anDice[1], (ConstTanBoard)anBoard,
-                        NULL, FALSE, 0.0f, &ci, &ec, aamf) < 0) {
+                         NULL, FALSE, 0.0f, &ci, &ec, aamf) < 0) {
     PyErr_SetString(PyExc_RuntimeError, "FindnSaveBestMoves failed");
     return NULL;
   }
@@ -1205,7 +1206,8 @@ static PyObject *PythonFindBestMoves(PyObject *self, PyObject *args) {
     }
     for (size_t k = 0; k < p.second.size(); ++k)
       PyTuple_SET_ITEM(moveTuple, (Py_ssize_t)k, PyLong_FromLong(p.second[k]));
-    PyObject *dict = Py_BuildValue("{s:O s:f}", "move", moveTuple, "score", p.first);
+    PyObject *dict =
+        Py_BuildValue("{s:O s:f}", "move", moveTuple, "score", p.first);
     Py_DECREF(moveTuple);
     if (!dict) {
       Py_DECREF(list);
@@ -2445,7 +2447,8 @@ static PyMethodDef GnubgMethods[] = {
      "    returns: tuple of (from, to) pairs, 1-based"},
 
     {"findbestmoves", PythonFindBestMoves, METH_VARARGS,
-     "Find all legal moves for position and dice, ordered by score (best first)\n"
+     "Find all legal moves for position and dice, ordered by score (best "
+     "first)\n"
      "    arguments: same as findbestmove\n"
      "    returns: list of dicts {\"move\": (from,to,...), \"score\": float}"},
 
@@ -2564,7 +2567,8 @@ static struct PyModuleDef gnubgmodule = {
     PyModuleDef_HEAD_INIT, "_gnubg",
     "Python bindings for the full GNUBG engine", -1, GnubgMethods};
 
-// Helper: return true if path contains gnubg.wd or gnubg.weights (validate data dir)
+// Helper: return true if path contains gnubg.wd or gnubg.weights (validate data
+// dir)
 static bool data_dir_has_weights(const char *dir) {
   if (!dir)
     return false;
@@ -2582,17 +2586,20 @@ static bool data_dir_has_weights(const char *dir) {
   return false;
 }
 
-// Compute package data dir from the extension's location so pip-installed package works without env.
+// Compute package data dir from the extension's location so pip-installed
+// package works without env.
 static std::string get_package_data_dir_from_so(void) {
   auto data_dir_from_base = [](const std::string &base) -> std::string {
     if (base.size() >= 5 && base.compare(base.size() - 5, 5, "gnubg") == 0 &&
-        (base.size() == 5 || base[base.size() - 6] == '/' || base[base.size() - 6] == '\\'))
+        (base.size() == 5 || base[base.size() - 6] == '/' ||
+         base[base.size() - 6] == '\\'))
       return base + "/data";
     return base + "/gnubg/data";
   };
 #if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
   Dl_info info;
-  if (dladdr(reinterpret_cast<void *>(&get_package_data_dir_from_so), &info) && info.dli_fname) {
+  if (dladdr(reinterpret_cast<void *>(&get_package_data_dir_from_so), &info) &&
+      info.dli_fname) {
     std::string path(info.dli_fname);
     size_t slash = path.find_last_of("/\\");
     if (slash != std::string::npos) {
@@ -2604,7 +2611,8 @@ static std::string get_package_data_dir_from_so(void) {
   char path[MAX_PATH];
   HMODULE hMod = NULL;
   if (GetModuleHandleExA(
-          GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+          GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+              GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
           reinterpret_cast<LPCSTR>(&get_package_data_dir_from_so), &hMod) &&
       hMod && GetModuleFileNameA(hMod, path, sizeof(path))) {
     std::string s(path);
@@ -2619,7 +2627,8 @@ static std::string get_package_data_dir_from_so(void) {
   return std::string();
 }
 
-// Set GNUBG_DATA_DIR to package-relative path when not already set, so data loads "off the bat".
+// Set GNUBG_DATA_DIR to package-relative path when not already set, so data
+// loads "off the bat".
 static void set_gnubg_data_dir_env_if_unset(void) {
   if (std::getenv("GNUBG_DATA_DIR") != nullptr)
     return;
@@ -2630,12 +2639,14 @@ static void set_gnubg_data_dir_env_if_unset(void) {
   std::string env = "GNUBG_DATA_DIR=" + pkg_data;
   _putenv(env.c_str());
 #else
-  setenv("GNUBG_DATA_DIR", pkg_data.c_str(), 1);  // 1 = overwrite (we only call when unset)
+  setenv("GNUBG_DATA_DIR", pkg_data.c_str(),
+         1);  // 1 = overwrite (we only call when unset)
 #endif
 }
 
-// Set package data dir: prefer GNUBG_DATA_DIR env (override), then path relative to
-// this shared object so the package is self-contained and no env var is required.
+// Set package data dir: prefer GNUBG_DATA_DIR env (override), then path
+// relative to this shared object so the package is self-contained and no env
+// var is required.
 static void set_pkg_datadir_from_module(void) {
   set_gnubg_data_dir_env_if_unset();
   auto try_set = [](const std::string &data_dir) -> bool {
@@ -2650,20 +2661,23 @@ static void set_pkg_datadir_from_module(void) {
     return;
   auto data_dir_from_base = [](const std::string &base) -> std::string {
     if (base.size() >= 5 && base.compare(base.size() - 5, 5, "gnubg") == 0 &&
-        (base.size() == 5 || base[base.size() - 6] == '/' || base[base.size() - 6] == '\\'))
+        (base.size() == 5 || base[base.size() - 6] == '/' ||
+         base[base.size() - 6] == '\\'))
       return base + "/data";
     return base + "/gnubg/data";
   };
 #if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
   Dl_info info;
-  if (dladdr(reinterpret_cast<void *>(&set_pkg_datadir_from_module), &info) && info.dli_fname) {
+  if (dladdr(reinterpret_cast<void *>(&set_pkg_datadir_from_module), &info) &&
+      info.dli_fname) {
     std::string path(info.dli_fname);
     size_t slash = path.find_last_of("/\\");
     if (slash != std::string::npos) {
       std::string dir = path.substr(0, slash);
       if (try_set(data_dir_from_base(dir)))
         return;
-      // Editable build: .so in build/cp310/ -> try source (prefer package data: weights + bearoff + met)
+      // Editable build: .so in build/cp310/ -> try source (prefer package data:
+      // weights + bearoff + met)
       if (dir.find("build") != std::string::npos) {
         size_t build_pos = dir.find("build");
         std::string prefix = dir.substr(0, build_pos);
@@ -2677,9 +2691,10 @@ static void set_pkg_datadir_from_module(void) {
 #elif defined(_WIN32) || defined(WIN32) || defined(__MINGW32__)
   char path[MAX_PATH];
   HMODULE hMod = NULL;
-  if (GetModuleHandleExA(
-          GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-          reinterpret_cast<LPCSTR>(&set_pkg_datadir_from_module), &hMod) &&
+  if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                             GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                         reinterpret_cast<LPCSTR>(&set_pkg_datadir_from_module),
+                         &hMod) &&
       hMod && GetModuleFileNameA(hMod, path, sizeof(path))) {
     std::string s(path);
     size_t slash = s.find_last_of("/\\");
@@ -2690,7 +2705,8 @@ static void set_pkg_datadir_from_module(void) {
         return;
       if (s.find("build") != std::string::npos) {
         size_t build_pos = s.find("build");
-        std::string src_data = s.substr(0, build_pos) + "src\\gnubgmodule\\data";
+        std::string src_data =
+            s.substr(0, build_pos) + "src\\gnubgmodule\\data";
         if (try_set(src_data))
           return;
       }

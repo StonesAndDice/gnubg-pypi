@@ -32,7 +32,7 @@ runs:
           zlib1g-dev
 
     - name: Install system dependencies (macOS)
-      if: ${{ inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
+      if: ${{ startsWith(inputs.os, 'macos') }}
       shell: bash
       run: |
         brew update
@@ -69,35 +69,35 @@ runs:
         "PKG_CONFIG_PATH=$ucrt64\lib\pkgconfig" | Out-File -FilePath $env:GITHUB_ENV -Append
 
     - name: Install Meson
-      if: ${{ inputs.os == 'ubuntu-latest' || inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
+      if: ${{ inputs.os == 'ubuntu-latest' || startsWith(inputs.os, 'macos') }}
       shell: bash
       run: pip install meson ninja cibuildwheel
 
     - name: Build with meson
-      if: ${{ inputs.os == 'ubuntu-latest' || inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
+      if: ${{ inputs.os == 'ubuntu-latest' || startsWith(inputs.os, 'macos') }}
       shell: bash
       run: |
         meson setup build
         meson compile -C build
 
     - name: Clean build dir before cibuildwheel
-      if: ${{ inputs.os == 'ubuntu-latest' || inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
+      if: ${{ inputs.os == 'ubuntu-latest' || startsWith(inputs.os, 'macos') }}
       shell: bash
       run: rm -rf build
 
     - name: Build wheels
-      if: ${{ inputs.os == 'ubuntu-latest' || inputs.os == 'macos-13' || inputs.os == 'macos-14' }}
+      if: ${{ inputs.os == 'ubuntu-latest' || startsWith(inputs.os, 'macos') }}
       shell: bash
       env:
         CIBW_SKIP: "pp* *-win32"
         CIBW_BUILD: "${{ inputs.python }}-*"
         CIBW_ARCHS_MACOS: "native"
-        CIBW_PLATFORM: ${{ inputs.os == 'ubuntu-latest' && 'linux' || (inputs.os == 'macos-13' && 'macos') || (inputs.os == 'macos-14' && 'macos') || (inputs.os == 'windows-latest' && 'windows') }}
+        CIBW_PLATFORM: ${{ inputs.os == 'ubuntu-latest' && 'linux' || (startsWith(inputs.os, 'macos') && 'macos') || (inputs.os == 'windows-latest' && 'windows') }}
         CIBW_BEFORE_BUILD: ${{ inputs.os == 'ubuntu-latest' && '( dnf install -y readline-devel ncurses-devel glib2-devel gmp-devel sqlite-devel libpng-devel pkg-config 2>/dev/null ) || ( apk add --no-cache readline-dev ncurses-dev glib-dev gmp-dev sqlite-dev libpng-dev pkgconfig )' || '' }}
         CIBW_TEST_REQUIRES: "pytest"
         CIBW_TEST_COMMAND: "pytest {project}/tests"
-        # Match Homebrew dylibs (min 14.0) so delocate accepts the wheel
-        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        # Match Homebrew dylibs (built for the runner's macOS, 15.0) so delocate accepts the wheel
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
         CIBW_ENVIRONMENT_LINUX: >
           LDFLAGS="-L$(python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))') $LDFLAGS"
           CPPFLAGS="-I$(python -c 'import sysconfig; print(sysconfig.get_path("include"))') $CPPFLAGS"
@@ -127,7 +127,7 @@ runs:
         CIBW_SKIP: "pp* *-win32"
         CIBW_BUILD: "${{ inputs.python }}-*"
         CIBW_ARCHS_MACOS: "native"
-        CIBW_PLATFORM: ${{ inputs.os == 'ubuntu-latest' && 'linux' || (inputs.os == 'macos-13' && 'macos') || (inputs.os == 'macos-14' && 'macos') || (inputs.os == 'windows-latest' && 'windows') }}
+        CIBW_PLATFORM: ${{ inputs.os == 'ubuntu-latest' && 'linux' || (startsWith(inputs.os, 'macos') && 'macos') || (inputs.os == 'windows-latest' && 'windows') }}
         CIBW_TEST_REQUIRES: "pytest"
         CIBW_TEST_COMMAND: "pytest {project}/tests"
       run: cibuildwheel --output-dir wheelhouse

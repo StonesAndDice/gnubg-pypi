@@ -12,7 +12,8 @@
  * libgnubg) - do not redefine here */
 
 /* Multithreading: real MT_InitThreads, MT_Close, TLSCreate, TLSSetValue, etc.
- * come from mtsupport.c so eval has valid nnState (MT_Get_nnState()). No stubs here. */
+ * come from mtsupport.c so eval has valid nnState (MT_Get_nnState()). No stubs
+ * here. */
 
 /* Stub: Old Python interpreter initialization */
 void PythonInitialise(const char *argv0) {
