@@ -2441,6 +2441,89 @@ static PyObject *PythonSetGNUbgID(PyObject *self, PyObject *args) {
   Py_RETURN_NONE;
 }
 
+/*
+ * Output routing for gnubg.set_output(): gnubg prints through g_print()
+ * (normal output) and g_printerr() (errors). While a Python target is set,
+ * a GLib print handler hands the text to it; otherwise GLib's default
+ * handlers write to the C stdout/stderr as before.
+ */
+static PyObject *apyOutputTarget[2] = {NULL, NULL}; /* 0 = out, 1 = err */
+
+static void OutputToPython(int iStream, const gchar *sz) {
+  PyObject *target = apyOutputTarget[iStream];
+
+  /* Only the thread holding the GIL may call into Python; text printed
+   * by gnubg's calculation threads goes to the C stream instead. */
+  if (!target || !PyGILState_Check()) {
+    FILE *pf = iStream ? stderr : stdout;
+    fputs(sz, pf);
+    fflush(pf);
+    return;
+  }
+
+  PyObject *excType, *excValue, *excTraceback;
+  PyErr_Fetch(&excType, &excValue, &excTraceback);
+  PyObject *text = PyUnicode_DecodeUTF8(sz, (Py_ssize_t)strlen(sz), "replace");
+  PyObject *result = NULL;
+  if (text) {
+    if (PyObject_HasAttrString(target, "write"))
+      result = PyObject_CallMethod(target, "write", "O", text);
+    else
+      result = PyObject_CallFunctionObjArgs(target, text, NULL);
+    Py_DECREF(text);
+  }
+  if (!result)
+    PyErr_WriteUnraisable(target);
+  Py_XDECREF(result);
+  PyErr_Restore(excType, excValue, excTraceback);
+}
+
+static void PrintToPython(const gchar *sz) { OutputToPython(0, sz); }
+
+static void PrintErrToPython(const gchar *sz) { OutputToPython(1, sz); }
+
+/*
+ * Exposed as: gnubg.set_output([out], [err])
+ * Route gnubg's output (out) and error messages (err) to a callable taking
+ * a str, or to an object with a write() method (a file, io.StringIO,
+ * sys.stderr, ...). None restores the C stdout/stderr.
+ */
+static PyObject *PythonSetOutput(PyObject *self, PyObject *args,
+                                 PyObject *kwargs) {
+  static const char *kwlist[] = {"out", "err", NULL};
+  PyObject *apy[2] = {Py_None, Py_None};
+
+  (void)self;
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OO:set_output",
+                                   const_cast<char **>(kwlist), &apy[0],
+                                   &apy[1]))
+    return NULL;
+
+  for (int i = 0; i < 2; ++i)
+    if (apy[i] != Py_None && !PyCallable_Check(apy[i]) &&
+        !PyObject_HasAttrString(apy[i], "write")) {
+      PyErr_SetString(PyExc_TypeError,
+                      "set_output: out and err must be None, a callable "
+                      "taking a str, or an object with a write() method");
+      return NULL;
+    }
+
+  for (int i = 0; i < 2; ++i) {
+    PyObject *old = apyOutputTarget[i];
+    if (apy[i] == Py_None) {
+      apyOutputTarget[i] = NULL;
+    } else {
+      Py_INCREF(apy[i]);
+      apyOutputTarget[i] = apy[i];
+    }
+    Py_XDECREF(old);
+  }
+
+  g_set_print_handler(apyOutputTarget[0] ? PrintToPython : NULL);
+  g_set_printerr_handler(apyOutputTarget[1] ? PrintErrToPython : NULL);
+  Py_RETURN_NONE;
+}
+
 /* -------------------------------------------------------------------------
  * Module Registration
  * ------------------------------------------------------------------------- */
@@ -2639,6 +2722,16 @@ static PyMethodDef GnubgMethods[] = {
     {"setgnubgid", PythonSetGNUbgID, METH_VARARGS,
      "Set current board and match from GNUbgID or XGID string\n"
      "    arguments: string (GNUbgID or XGID)\n"
+     "    returns: None"},
+
+    {"set_output", (PyCFunction)(PyCFunctionWithKeywords)PythonSetOutput,
+     METH_VARARGS | METH_KEYWORDS,
+     "Route gnubg's printed output and error messages\n"
+     "    arguments: [out], [err]: each a callable taking a str, an object\n"
+     "               with a write() method (file, io.StringIO, sys.stderr),\n"
+     "               or None for the process's C stdout/stderr (default)\n"
+     "    e.g. set_output(sys.stderr, sys.stderr) keeps stdout free for\n"
+     "    a protocol; set_output(lambda s: None, lambda s: None) silences\n"
      "    returns: None"},
 
     {"hint", PythonHint, METH_VARARGS,

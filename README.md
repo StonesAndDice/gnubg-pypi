@@ -47,6 +47,8 @@ sections below or visit the full documentation on [ReadTheDocs](https://gnubg.re
 
 **API style:** All functions in the C extension are also available in snake_case format (e.g., `find_best_move` instead of `findbestmove`, `position_from_id` instead of `positionfromid`). The original camelCase names remain available for backward compatibility. The snake_case variants are the recommended idiomatic Python API.
 
+**Output:** gnubg prints its messages (e.g. from `gnubg.command(...)`) to the process's standard output and error streams. To keep stdout free, for example in a program that speaks a protocol on it, route them with `gnubg.set_output(out, err)`. Each target can be a callable taking a `str`, or anything with a `write()` method: `gnubg.set_output(sys.stderr, sys.stderr)`, `gnubg.set_output(lambda s: None, lambda s: None)` to silence, or `gnubg.set_output(lambda s: log.info(s.rstrip()))`. `gnubg.set_output()` restores the default.
+
 **Examples:** Example projects (e.g. a REST API for best-move and evaluation) are distributed with the package under `gnubg/examples/`. After installing, find them with `import gnubg, os; print(os.path.join(os.path.dirname(gnubg.__file__), 'examples'))`. See the `README.md` in that directory for how to run them.
 
 * **ReadTheDocs** [https://gnubg.readthedocs.io/en/latest/](https://gnubg.readthedocs.io/en/latest/)
