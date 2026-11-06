@@ -4030,7 +4030,7 @@ extern void ProgressStart(const char *sz) {
 #endif
 
   if (sz) {
-    fputs(sz, stdout);
+    g_print("%s", sz);
     fflush(stdout);
   }
 }
@@ -4054,7 +4054,7 @@ extern void ProgressStartValue(char *sz, int iMax) {
 #endif
 
   if (sz) {
-    fputs(sz, stdout);
+    g_print("%s", sz);
     fflush(stdout);
   }
 }
@@ -4100,9 +4100,9 @@ static gboolean Progress(gpointer UNUSED(unused)) {
   }
 #endif
 
-  putchar(ach[i++]);
+  g_print("%c", ach[i++]);
   i &= 0x03;
-  putchar('\b');
+  g_print("\b");
   fflush(stdout);
   return TRUE;
 }
@@ -4131,8 +4131,6 @@ extern void CallbackProgress(void) {
 
 extern void ProgressEnd(void) {
 
-  int i;
-
   if (!fShowProgress)
     return;
 
@@ -4148,10 +4146,7 @@ extern void ProgressEnd(void) {
   }
 #endif
 
-  putchar('\r');
-  for (i = 0; i < 79; i++)
-    putchar(' ');
-  putchar('\r');
+  g_print("\r%79s\r", "");
   fflush(stdout);
 }
 
@@ -4220,8 +4215,7 @@ static void BearoffProgress(unsigned int i) {
     return;
   }
 #endif
-  putchar("\\|/-"[(i / 1000) % 4]);
-  putchar('\r');
+  g_print("%c\r", "\\|/-"[(i / 1000) % 4]);
   fflush(stdout);
 }
 
@@ -4416,6 +4410,9 @@ void gnubg_lib_init_for_python(void) {
     default_sgf_folder = g_strdup(".");
   }
   output_initialize();
+  /* error messages through g_printerr(), like the rest of the output
+   * through g_print(), so that gnubg.set_output() can redirect them */
+  foutputerr_glib = TRUE;
   init_defaults();
   DefaultDBSettings();
   init_rng();
@@ -4485,12 +4482,12 @@ extern int GetManualDice(unsigned int anDice[2]) {
 
 static void init_rng(void) {
   if (!(rngctxCurrent = InitRNG(NULL, NULL, TRUE, rngCurrent))) {
-    printf("%s\n", _("Failure setting up RNG"));
+    g_printerr("%s\n", _("Failure setting up RNG"));
     exit(EXIT_FAILURE);
   }
   if (!(rngctxRollout =
             InitRNG(&rcRollout.nSeed, NULL, TRUE, rcRollout.rngRollout))) {
-    printf("%s\n", _("Failure setting up RNG for rollout."));
+    g_printerr("%s\n", _("Failure setting up RNG for rollout."));
     exit(EXIT_FAILURE);
   }
 
@@ -5267,7 +5264,7 @@ void CommandDiceRolls(char *sz) {
 
       RollDice(anDice, &rngCurrent, rngctxCurrent);
 
-      printf("%u %u\n", anDice[0], anDice[1]);
+      outputf("%u %u\n", anDice[0], anDice[1]);
     }
   }
 }
