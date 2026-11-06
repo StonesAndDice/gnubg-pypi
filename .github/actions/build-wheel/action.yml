@@ -101,7 +101,29 @@ runs:
         CIBW_ENVIRONMENT_LINUX: >
           LDFLAGS="-L$(python -c 'import sysconfig; print(sysconfig.get_config_var("LIBDIR"))') $LDFLAGS"
           CPPFLAGS="-I$(python -c 'import sysconfig; print(sysconfig.get_path("include"))') $CPPFLAGS"
+        # auditwheel, but with GLib bundled too (the manylinux policies assume
+        # the system has it; slim images don't). See tools/repair_wheel_linux.py.
+        CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
+          pip install auditwheel==6.8.2 &&
+          python {project}/tools/repair_wheel_linux.py -w {dest_dir} {wheel}
       run: cibuildwheel --output-dir wheelhouse
+
+    - name: Test the wheels on systems without GLib (Linux)
+      if: ${{ inputs.os == 'ubuntu-latest' }}
+      shell: bash
+      run: |
+        # cibuildwheel's own test runs in the build container, which has the
+        # build dependencies; install the wheels in clean images too (issue #19).
+        py="${{ inputs.python }}"
+        version="${py:2:1}.${py:3}"
+        for image in "python:${version}-slim" "python:${version}-alpine"; do
+          echo "::group::${image}"
+          docker run --rm \
+            -v "$PWD/wheelhouse:/wheelhouse:ro" -v "$PWD/tools:/tools:ro" \
+            "${image}" sh -ec \
+            "pip install --quiet --no-index --find-links /wheelhouse gnubg && python /tools/check_wheel_import.py"
+          echo "::endgroup::"
+        done
 
     - name: Install Meson
       if: ${{ inputs.os == 'windows-latest' }}
