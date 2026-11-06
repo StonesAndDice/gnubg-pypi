@@ -1795,6 +1795,7 @@ static PyObject *PythonHint(PyObject *self, PyObject *args) {
   procrecorddata prochint;
   PyObject *retval = NULL;
   PyObject *gnubgid = NULL;
+  PyObject *noargs = NULL;
 
   if (!PyArg_ParseTuple(args, "|i:hint", &nMaxMoves))
     return NULL;
@@ -1842,15 +1843,16 @@ static PyObject *PythonHint(PyObject *self, PyObject *args) {
     return NULL;
   }
   retval = (PyObject *)prochint.pvUserData;
-  gnubgid = PythonGnubgID(self, Py_BuildValue("()"));
-  if (gnubgid) {
-    PyObject *tmp = Py_BuildValue("{s:s,s:N,s:N}", "hinttype", "chequer",
-                                  "gnubgid", gnubgid, "hint", retval);
+  noargs = PyTuple_New(0);
+  gnubgid = noargs ? PythonGnubgID(self, noargs) : NULL;
+  Py_XDECREF(noargs);
+  if (!gnubgid) {
     Py_DECREF(retval);
-    Py_DECREF(gnubgid);
-    retval = tmp;
+    return NULL;
   }
-  return retval;
+  /* "N" steals the references to gnubgid and retval: no Py_DECREF after */
+  return Py_BuildValue("{s:s,s:N,s:N}", "hinttype", "chequer", "gnubgid",
+                       gnubgid, "hint", retval);
 }
 
 /* Helper: set dict key and decref value (steal reference) */
